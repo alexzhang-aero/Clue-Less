@@ -19,7 +19,7 @@ clock = pygame.time.Clock()
 
 turn = False
 
-def GamePlayLoop(player:dict, other_player: dict):
+def GamePlayLoop(player:Player, other_player: Player):
     """ Main game loop
     
     other_player: Player dict representing the other player
@@ -47,8 +47,7 @@ def GamePlayLoop(player:dict, other_player: dict):
 
     if turn:
         player.update(pygame.key.get_pressed(), GameBoard.GetValidMoves(player.loc, roomList, (SCREEN_WIDTH, SCREEN_HEIGHT)))
-    screen.blit(player.surf, player.rect)
-    screen.blit(other_player.surf, other_player.rect)
+    GameBoard.update_player_sprites(screen, player, other_player)
 
     pygame.display.flip()
     clock.tick(30)
@@ -62,22 +61,14 @@ def main():
     n = Network()
     buttonLoc = []
     # this returns the player object with the initial position dictated by the server
-    player_data = n.get_player()
-    p1 = Player(player_data['loc'], player_data['weaponIn'], player_data['suspectIn'], player_data['roomIn'])
-    p1.convert_alpha()
-    
-    other_player_data = n.send(player_data) 
-    p2 = Player(other_player_data['loc'], other_player_data['weaponIn'], other_player_data['suspectIn'], other_player_data['roomIn'])
-    p2.convert_alpha()
+    p1 = n.get_player()
+    p2 = n.send(p1) 
     running = True
 
     while True:
         # when we send our players data we get back the other player's data
-        other_player_data = n.send(p1.data)
-
-        #update other player poz
-        p2.move(other_player_data['loc'])
-
+        p2 = n.send(p1)
+        
         # get player status after a game movement
         p1 = GamePlayLoop(p1, p2)
 

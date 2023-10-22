@@ -27,7 +27,9 @@ class Room(pygame.sprite.Sprite):
         self.size = size
         self.doorLoc = doorLoc
         self.clue = clue
-
+class GameBoard:
+    def __init__(self):
+        pass
 def CreateRooms():
     roomList = []
     roomDetails= [{'loc':[300,0], 'size':[350,350], 'doorLoc': [125, 300], 'fileName':'LabRoom.png', 'clue': None}]
@@ -90,3 +92,19 @@ def GetValidMoves(playerLoc, roomList, screenBounds):
                 break
 
     return validMoves
+
+def update_player_sprites(screen, p1, p2):
+    #p1
+    surf = pygame.image.load(os.path.join('img', "WizardSprite.png")).convert_alpha()
+    surf.set_colorkey((0,0,0))
+    rect = surf.get_rect(topleft=(p1.loc[0], p1.loc[1]))
+    surf = pygame.transform.scale(surf, (50, 50)) 
+    #p2
+    surf2 = pygame.image.load(os.path.join('img', "WizardSprite.png")).convert_alpha()
+    surf2.set_colorkey((0,0,0))
+    rect2 = surf2.get_rect(topleft=(p2.loc[0], p2.loc[1]))
+    surf2 = pygame.transform.scale(surf2, (50, 50)) 
+
+    screen.blit(surf, rect)
+    screen.blit(surf2, rect2)
+

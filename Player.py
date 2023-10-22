@@ -12,12 +12,10 @@ class Player(pygame.sprite.Sprite):
                  loc,
                  weaponIn,
                  suspectIn,
-                 roomIn):
+                 roomIn,
+                 id:int):
         super(Player, self).__init__()
-        self.surf = pygame.image.load(os.path.join('img', "WizardSprite.png"))
-        self.surf.set_colorkey((0,0,0))
-        self.rect = self.surf.get_rect(topleft=(loc[0], loc[1]))
-        self.surf = pygame.transform.scale(self.surf, (50, 50)) 
+        
 
         self.dealtCards = {'weapon':  weaponIn,
                            'suspect': suspectIn,
@@ -29,7 +27,7 @@ class Player(pygame.sprite.Sprite):
         self.movesRemaining = 0
         self.keyPressed = False
         self.loc = loc
-        self.data = {"loc": loc,"weaponIn":weaponIn,"suspectIn":suspectIn,"roomIn":roomIn}
+        self.id = id    
 
     def convert_alpha(self):
         self.surf = self.surf.convert_alpha()
@@ -66,7 +64,6 @@ class Player(pygame.sprite.Sprite):
                 self.keyPressed = True
                 self.movesRemaining -= 1
 
-        self.data = {"loc": self.loc,"weaponIn":self.weaponIn,"suspectIn":self.suspectIn,"roomIn":self.roomIn}
     
     def move(self,loc):
         self.rect.move_ip(loc[0], loc[1])

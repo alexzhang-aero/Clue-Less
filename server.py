@@ -25,8 +25,8 @@ s.listen(2)
 print("Waiting for a connection, Server Started")
 
 
-p1 = {"loc": [450, 450], "weaponIn": None, "suspectIn": None, "roomIn": None}
-p2 = {"loc": [475, 475], "weaponIn": None, "suspectIn": None, "roomIn": None}
+p1 = Player([450, 450], None, None, None, 0)
+p2 = Player([475, 475], None, None, None, 1)
 
 players = [p1,p2]
 
