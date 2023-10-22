@@ -21,7 +21,7 @@ conn,addr= None,None
  
 sock=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 sock.bind((HOST,PORT))
-sock.listen(1)
+sock.listen(2)
 
 turn=True
 

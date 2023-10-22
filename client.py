@@ -1,7 +1,7 @@
 import pygame
 import socket
 import threading
-
+from network import Network
 from pygame.locals import QUIT
 from random import randrange
 
@@ -12,80 +12,75 @@ SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 1000
 
 pygame.init()
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption('Clue-less - Client')
 clock = pygame.time.Clock()
 
-HOST = '127.0.0.1'
-PORT = 9009
-connection_established = False
-
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 turn = False
 
-try:
-    sock.connect((HOST, PORT))
-    connection_established = True
-except Exception as e:
-    print("Failed to connect to server:", e)
-    pygame.quit()
-    exit()
-
-def receive_data():
-    global turn, connection_established, player
-
-    while True:
-        if not turn:
-            data = sock.recv(1024).decode()
-            data = data.split('-')
-            
-            if data[3] == 'Yourturn':
-                turn = True
-
-        else:
-            break
-
-def GamePlayLoop():
+def GamePlayLoop(player:dict, other_player: dict):
+    """ Main game loop
+    
+    other_player: Player dict representing the other player
+    This other_player object should be updated to an array of Player objects
+    in the future to support 6 players.
+    """
     global turn
+    roomList = GameBoard.CreateRooms()
+    
+    # while True:
+    GameBoard.BuildGameBoard(screen, roomList, player.movesRemaining)
+
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            return False
+
+        if turn and event.type == pygame.MOUSEBUTTONDOWN:
+            mouse = pygame.mouse.get_pos()
+            if GameBoard.Collide((mouse[0], mouse[1]), 0, 300, 900, 1000):
+                player.movesRemaining = randrange(1, 6)
+                turn = False
+
+                move_data = f"{player.rect.x}-{player.rect.y}-{player.movesRemaining}-Yourturn-{'True'}"
+                # sock.send(move_data.encode())
+
+    if turn:
+        player.update(pygame.key.get_pressed(), GameBoard.GetValidMoves(player.loc, roomList, (SCREEN_WIDTH, SCREEN_HEIGHT)))
+        screen.blit(player.surf, player.rect)
+
+    pygame.display.flip()
+    clock.tick(30)
+
+    return player
+
+
+
+def main():
+
+    n = Network()
+    buttonLoc = []
+    # this returns the player object with the initial position dictated by the server
+    player_data = n.get_player()
+    p1 = Player(player_data['loc'], player_data['weaponIn'], player_data['suspectIn'], player_data['roomIn'])
+    
+    other_player_data = n.send(player_data) 
+    p2 = Player(other_player_data['loc'], other_player_data['weaponIn'], other_player_data['suspectIn'], other_player_data['roomIn'])
+    
+    running = True
 
     while True:
-        GameBoard.BuildGameBoard(screen, roomList, player.movesRemaining)
+        # when we send our players data we get back the other player's data
+        other_player_data = n.send(p1.data)
 
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                return False
+        #update other player poz
+        p2.move(other_player_data['loc'])
 
-            if turn and event.type == pygame.MOUSEBUTTONDOWN:
-                mouse = pygame.mouse.get_pos()
-                if GameBoard.Collide((mouse[0], mouse[1]), 0, 300, 900, 1000):
-                    player.movesRemaining = randrange(1, 6)
-                    turn = False
+        # get player status after a game movement
+        p1 = GamePlayLoop(p1, p2)
 
-                    move_data = f"{player.rect.x}-{player.rect.y}-{player.movesRemaining}-Yourturn-{'True'}"
-                    sock.send(move_data.encode())
-
-        if turn:
-            player.update(pygame.key.get_pressed(), GameBoard.GetValidMoves(player.loc, roomList, (SCREEN_WIDTH, SCREEN_HEIGHT)))
-            screen.blit(player.surf, player.rect)
-
-        pygame.display.flip()
-        clock.tick(30)
-
-        if not turn:
-            receive_data()
-
-    return True
+    sock.close()
+    pygame.quit()
 
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('Clue-less - Client')
-player = Player([450, 450], None, None, None)
-roomList = GameBoard.CreateRooms()
-buttonLoc = []
-
-running = True
-
-while running:
-    running = GamePlayLoop()
-
-sock.close()
-pygame.quit()
+main()

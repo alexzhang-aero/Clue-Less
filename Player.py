@@ -14,7 +14,7 @@ class Player(pygame.sprite.Sprite):
                  suspectIn,
                  roomIn):
         super(Player, self).__init__()
-        self.surf = pygame.image.load(os.path.join('img', "WizardSprite.png")).convert_alpha()
+        self.surf = pygame.image.load(os.path.join('img', "WizardSprite.png"))
         self.surf.set_colorkey((0,0,0))
         self.rect = self.surf.get_rect(topleft=(loc[0], loc[1]))
         self.surf = pygame.transform.scale(self.surf, (50, 50)) 
@@ -29,6 +29,7 @@ class Player(pygame.sprite.Sprite):
         self.movesRemaining = 0
         self.keyPressed = False
         self.loc = loc
+        self.data = {"loc": loc,"weaponIn":weaponIn,"suspectIn":suspectIn,"roomIn":roomIn}
 
     # Move the sprite based on user keypresses
     def update(self, pressed_keys, validMoves):
@@ -61,3 +62,12 @@ class Player(pygame.sprite.Sprite):
             if playerMoved:
                 self.keyPressed = True
                 self.movesRemaining -= 1
+
+        self.data = {"loc": self.loc,"weaponIn":self.weaponIn,"suspectIn":self.suspectIn,"roomIn":self.roomIn}
+    
+    def move(self,loc):
+        self.rect.move_ip(loc[0], loc[1])
+        self.loc = loc
+
+
+        
