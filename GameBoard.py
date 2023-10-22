@@ -27,9 +27,7 @@ class Room(pygame.sprite.Sprite):
         self.size = size
         self.doorLoc = doorLoc
         self.clue = clue
-class GameBoard:
-    def __init__(self):
-        pass
+
 def CreateRooms():
     roomList = []
     roomDetails= [{'loc':[300,0], 'size':[350,350], 'doorLoc': [125, 300], 'fileName':'LabRoom.png', 'clue': None}]

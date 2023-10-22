@@ -78,5 +78,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.move_ip(loc[0], loc[1])
         self.loc = loc
 
+    def __repr__(self):
+        return f"Player {self.id} is at {self.loc}"
 
         

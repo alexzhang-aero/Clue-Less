@@ -17,7 +17,6 @@ pygame.display.set_caption('Clue-less - Client')
 clock = pygame.time.Clock()
 
 
-
 def GamePlayLoop(player:Player, other_player: Player):
     """ Main game loop
     
@@ -34,12 +33,12 @@ def GamePlayLoop(player:Player, other_player: Player):
         if event.type == QUIT:
             return False
 
-        if player.turn and event.type == pygame.MOUSEBUTTONDOWN:
+        if player.activePlayer==player.id and event.type == pygame.MOUSEBUTTONDOWN:
             mouse = pygame.mouse.get_pos()
             if GameBoard.Collide((mouse[0], mouse[1]), 0, 300, 900, 1000):
                 player.movesRemaining = randrange(1, 6)
 
-    while player.turn:
+    while player.activePlayer==player.id:
         player.update(pygame.key.get_pressed(), GameBoard.GetValidMoves(player.loc, roomList, (SCREEN_WIDTH, SCREEN_HEIGHT)))
         GameBoard.update_player_sprites(screen, player, other_player)
 
@@ -54,13 +53,15 @@ def main():
     buttonLoc = []
     # this returns the player object with the initial position dictated by the server
     p1 = n.get_player()
+    print('Connected to the server. Player ID: ', p1.id)
+
     p2 = n.send(p1) 
+    print('Received other player data from server. Other Player ID: ', p2.id)
     running = True
 
     while True:
         # when we send our players data we get back the other player's data
         p2 = n.send(p1)
-
         # get player status after a game movement
         p1 = GamePlayLoop(p1, p2)
 

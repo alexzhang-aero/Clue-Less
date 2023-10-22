@@ -25,13 +25,15 @@ s.listen(2)
 print("Waiting for a connection, Server Started")
 
 
-p1 = Player([450, 450], None, None, None, 0, activePlayer=0)
-p2 = Player([475, 475], None, None, None, 1, activePlayer=0)
-playerWaitingForTurnCompletion = 0
+p1 = Player([450, 450], None, None, None, id=0, activePlayer=0)
+p2 = Player([485, 450], None, None, None, id=1, activePlayer=0)
+
 
 players = [p1,p2]
 
 def threaded_client(conn, player:int):
+    playerWaitingForTurnCompletion = 0
+
     conn.send(pickle.dumps(players[player]))
     other_player_data = ""
     while True:
@@ -43,12 +45,13 @@ def threaded_client(conn, player:int):
                 players[player] = data
                 other_player_data = players[0] if player == 1 else players[1]
                     
+                # check if the players have changed turns
                 if players[player].activePlayer!=playerWaitingForTurnCompletion:
                     playerWaitingForTurnCompletion = other_player_data.id
                     other_player_data.activePlayer = playerWaitingForTurnCompletion
 
-                # print("Received: ", data)
-                # print("Sending : ", other_player_data)
+                print("Received: ", print(data))
+                print("Sending : ", print(other_player_data))
 
                 conn.sendall(pickle.dumps(other_player_data))
             else:
@@ -60,8 +63,7 @@ def threaded_client(conn, player:int):
         except Exception as e:
             print ("General exception", str(e))
             break
-        except:
-            break
+        
 
     print("Lost connection")
     conn.close()
