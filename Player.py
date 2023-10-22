@@ -13,7 +13,8 @@ class Player(pygame.sprite.Sprite):
                  weaponIn,
                  suspectIn,
                  roomIn,
-                 id:int):
+                 id:int,
+                 activePlayer:int):
         super(Player, self).__init__()
         
 
@@ -28,6 +29,7 @@ class Player(pygame.sprite.Sprite):
         self.keyPressed = False
         self.loc = loc
         self.id = id    
+        self.activePlayer = activePlayer
 
     def convert_alpha(self):
         self.surf = self.surf.convert_alpha()
@@ -63,6 +65,13 @@ class Player(pygame.sprite.Sprite):
             if playerMoved:
                 self.keyPressed = True
                 self.movesRemaining -= 1
+            
+            if self.movesRemaining == 0:
+                # swap active turn value so the server sees it when passed
+                if self.id==1:
+                    self.activePlayer = 0
+                else:
+                    self.activePlayer = 1
 
     
     def move(self,loc):
