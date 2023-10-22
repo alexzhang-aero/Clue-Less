@@ -63,10 +63,11 @@ def main():
     # this returns the player object with the initial position dictated by the server
     player_data = n.get_player()
     p1 = Player(player_data['loc'], player_data['weaponIn'], player_data['suspectIn'], player_data['roomIn'])
+    p1.convert_alpha()
     
     other_player_data = n.send(player_data) 
     p2 = Player(other_player_data['loc'], other_player_data['weaponIn'], other_player_data['suspectIn'], other_player_data['roomIn'])
-    
+    p2.convert_alpha()
     running = True
 
     while True:

@@ -31,6 +31,9 @@ class Player(pygame.sprite.Sprite):
         self.loc = loc
         self.data = {"loc": loc,"weaponIn":weaponIn,"suspectIn":suspectIn,"roomIn":roomIn}
 
+    def convert_alpha(self):
+        self.surf = self.surf.convert_alpha()
+
     # Move the sprite based on user keypresses
     def update(self, pressed_keys, validMoves):
         if self.movesRemaining:
