@@ -47,7 +47,8 @@ def GamePlayLoop(player:dict, other_player: dict):
 
     if turn:
         player.update(pygame.key.get_pressed(), GameBoard.GetValidMoves(player.loc, roomList, (SCREEN_WIDTH, SCREEN_HEIGHT)))
-        screen.blit(player.surf, player.rect)
+    screen.blit(player.surf, player.rect)
+    screen.blit(other_player.surf, other_player.rect)
 
     pygame.display.flip()
     clock.tick(30)
