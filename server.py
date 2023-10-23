@@ -43,6 +43,7 @@ def threaded_client(conn, player:int):
 
                 data = pickle.loads(data_received)
                 players[player] = data
+                
                 other_player_data = players[0] if player == 1 else players[1]
                     
                 # check if the players have changed turns

@@ -6,7 +6,7 @@ from pygame.locals import QUIT
 from random import randrange
 
 from Player import Player
-import GameBoard
+from GameBoard import GameBoard
 
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 1000
@@ -24,26 +24,32 @@ def GamePlayLoop(player:Player, other_player: Player):
     This other_player object should be updated to an array of Player objects
     in the future to support 6 players.
     """
-    roomList = GameBoard.CreateRooms()
-    
-    # while True:
-    GameBoard.BuildGameBoard(screen, roomList, player.movesRemaining)
+    gameboard = GameBoard(screen)
+    gameboard.build_game_board(player.movesRemaining)
+    gameboard.update_player_sprites(player, other_player)
 
     for event in pygame.event.get():
         if event.type == QUIT:
-            return False
+            pygame.quit()
+            # return False
 
         if player.activePlayer==player.id and event.type == pygame.MOUSEBUTTONDOWN:
             mouse = pygame.mouse.get_pos()
-            if GameBoard.Collide((mouse[0], mouse[1]), 0, 300, 900, 1000):
-                player.movesRemaining = randrange(1, 6)
+            if gameboard.collide((mouse[0], mouse[1]), 0, 300, 900, 1000):
+                print('Rolling dice...')
+                player.set_moves_remaining(randrange(1, 6))
+                gameboard.build_game_board(player.movesRemaining)
 
-    while player.activePlayer==player.id:
-        player.update(pygame.key.get_pressed(), GameBoard.GetValidMoves(player.loc, roomList, (SCREEN_WIDTH, SCREEN_HEIGHT)))
-        GameBoard.update_player_sprites(screen, player, other_player)
+                while player.activePlayer==player.id:
+                    pygame.event.pump()
+                    player.update(gameboard.get_valid_moves(player.loc, (SCREEN_WIDTH, SCREEN_HEIGHT)))
+                    
+                    gameboard.build_game_board(player.movesRemaining)
+                    gameboard.update_player_sprites(player, other_player)
+                    clock.tick(30)
 
-        pygame.display.flip()
-        clock.tick(30)
+                print("player ",player.id, " finished turn")
+
 
     return player
 
@@ -59,9 +65,13 @@ def main():
     print('Received other player data from server. Other Player ID: ', p2.id)
     running = True
 
+
     while True:
         # when we send our players data we get back the other player's data
         p2 = n.send(p1)
+        if p2.activePlayer == p1.id:
+            print("Your turn")
+            p1.activePlayer = p1.id
         # get player status after a game movement
         p1 = GamePlayLoop(p1, p2)
 

@@ -34,29 +34,29 @@ class Player(pygame.sprite.Sprite):
     def convert_alpha(self):
         self.surf = self.surf.convert_alpha()
 
+    def set_moves_remaining(self, moves):
+        self.movesRemaining = moves
+
     # Move the sprite based on user keypresses
-    def update(self, pressed_keys, validMoves):
-        if self.movesRemaining:
+    def update(self,  validMoves):
+        pressed_keys = pygame.key.get_pressed()
+        if self.movesRemaining>0:
             playerMoved = False
             if pressed_keys[K_UP] and validMoves['up']:
                 if not self.keyPressed:
                     playerMoved = True
-                    self.rect.move_ip(0, -50)
                     self.loc[1] -= 50
             elif pressed_keys[K_DOWN] and validMoves['down']:
                 if not self.keyPressed:
                     playerMoved = True
-                    self.rect.move_ip(0, 50)
                     self.loc[1] += 50
             elif pressed_keys[K_LEFT] and validMoves['left']:
                 if not self.keyPressed:
                     playerMoved = True
-                    self.rect.move_ip(-50, 0)
                     self.loc[0] -= 50
             elif pressed_keys[K_RIGHT] and validMoves['right']:
                 if not self.keyPressed:
                     playerMoved = True
-                    self.rect.move_ip(50, 0)
                     self.loc[0] += 50
             else:
                 # This Is To Account For A Key Being Held Down
@@ -74,9 +74,9 @@ class Player(pygame.sprite.Sprite):
                     self.activePlayer = 1
 
     
-    def move(self,loc):
-        self.rect.move_ip(loc[0], loc[1])
-        self.loc = loc
+    # def move(self,loc):
+    #     self.rect.move_ip(loc[0], loc[1])
+    #     self.loc = loc
 
     def __repr__(self):
         return f"Player {self.id} is at {self.loc}"

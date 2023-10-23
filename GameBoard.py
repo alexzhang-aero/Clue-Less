@@ -28,81 +28,72 @@ class Room(pygame.sprite.Sprite):
         self.doorLoc = doorLoc
         self.clue = clue
 
-def CreateRooms():
-    roomList = []
-    roomDetails= [{'loc':[300,0], 'size':[350,350], 'doorLoc': [125, 300], 'fileName':'LabRoom.png', 'clue': None}]
-    for room in roomDetails:
-        roomList.append(Room(room['loc'], room['size'], room['doorLoc'], room['fileName'], room['clue']))
-    return roomList
+class GameBoard:
+    def __init__(self, screen):
+        self.screen = screen
+        self.roomList = self.create_rooms()
+
+        self.surf = pygame.image.load(os.path.join('img', "WizardSprite.png")).convert_alpha()
+        self.surf.set_colorkey((0, 0, 0))
+
+        self.surf2 = pygame.image.load(os.path.join('img', "WizardSprite.png")).convert_alpha()
+        self.surf2.set_colorkey((0, 0, 0))
+
+    def create_rooms(self):
+        roomList = []
+        roomDetails = [{'loc': [300, 0], 'size': [350, 350], 'doorLoc': [125, 300], 'fileName': 'LabRoom.png', 'clue': None}]
+        for room in roomDetails:
+            roomList.append(Room(room['loc'], room['size'], room['doorLoc'], room['fileName'], room['clue']))
+        return roomList
+
+    def build_game_board(self, movesRemaining):
+        self.screen.fill((0, 0, 0))
+
+        for room in self.roomList:
+            self.screen.blit(room.surf, room.rect)
+
+        font = pygame.font.Font('freesansbold.ttf', 32)
+        text = font.render('Moves Remaining: {}'.format(movesRemaining), True, green, black)
+        self.screen.blit(text, text.get_rect(topleft=(600, 900)))
+        text = font.render('Roll The Dice', True, green, black)
+        self.screen.blit(text, text.get_rect(topleft=(0, 900)))
         
-def BuildGameBoard(screen, roomList, movesRemaining):
-    # Fill the screen with black
-    screen.fill((0, 0, 0))
 
-    for room in roomList:
-        screen.blit(room.surf, room.rect)
+    def update_player_sprites(self, p1, p2):
+        # Player 1
+        rect = self.surf.get_rect(topleft=(p1.loc[0], p1.loc[1]))
+        self.surf = pygame.transform.scale(self.surf, (50, 50))
 
-    font = pygame.font.Font('freesansbold.ttf', 32)
-    text = font.render('Moves Remaining: {}'.format(movesRemaining), True, green, black)
-    screen.blit(text, text.get_rect(topleft=(600, 900)))
-    text = font.render('Roll The Dice'.format(movesRemaining), True, green, black)
-    screen.blit(text, text.get_rect(topleft=(0, 900)))
+        # Player 2
+        rect2 = self.surf2.get_rect(topleft=(p2.loc[0], p2.loc[1]))
+        self.surf2 = pygame.transform.scale(self.surf2, (50, 50))
 
+        self.screen.blit(self.surf, rect)
+        self.screen.blit(self.surf2, rect2)
+        pygame.display.flip()
 
+    def collide(self, loc, xMin, xMax, yMin, yMax):
+        return loc[0] >= xMin and loc[0] < xMax and loc[1] >= yMin and loc[1] < yMax
 
-def Collide(loc, xMin, xMax, yMin, yMax):
-    return loc[0] >= xMin and loc[0] < xMax\
-               and loc[1] >= yMin and loc[1] < yMax
+    def get_valid_moves(self, playerLoc, screenBounds):
+        validMoves = {'up': True, 'right': True, 'down': True, 'left': True}
+        newLocList = {'up': (playerLoc[0], playerLoc[1] - 50),
+                      'right': (playerLoc[0] + 50, playerLoc[1]),
+                      'down': (playerLoc[0], playerLoc[1] + 50),
+                      'left': (playerLoc[0] - 50, playerLoc[1])}
 
-def GetValidMoves(playerLoc, roomList, screenBounds):
-    validMoves = {'up': True, 'right': True, 'down': True, 'left': True}
-    newLocList = {'up': (playerLoc[0], playerLoc[1] - 50), 
-                  'right': (playerLoc[0] + 50, playerLoc[1]), 
-                  'down': (playerLoc[0], playerLoc[1] + 50), 
-                  'left': (playerLoc[0] - 50, playerLoc[1])}
-    
-    for direction in newLocList:
-        newLoc = newLocList[direction]
+        for direction in newLocList:
+            newLoc = newLocList[direction]
 
-        # Check You Are Not On Edge Of Screen
-        if newLoc[0] < 0 or newLoc[0] >= screenBounds[0] \
-           or newLoc[1] < 0 or newLoc[1] >= screenBounds[1]:
-            validMoves[direction] = False
-            continue
-
-        for room in roomList:
-            if (not Collide(newLoc, # Check You Would Be In A Door (Allowed)
-                            room.loc[0] + room.doorLoc[0],
-                            room.loc[0] + room.doorLoc[0] + 50,
-                            room.loc[1] + room.doorLoc[1],
-                            room.loc[1] + room.doorLoc[1] + 50)) and\
-                (not Collide(newLoc, # Check You Are Already In A Room (Allowed)
-                            room.loc[0] + 50,
-                            room.loc[0] + room.size[0] - 50,
-                            room.loc[1] + 50,
-                            room.loc[1] + room.size[1] - 50)) and\
-                   Collide(newLoc, # Check You Would Be In The Wall (Not Allowed)
-                           room.loc[0],
-                           room.loc[0] + room.size[0],
-                           room.loc[1],
-                           room.loc[1] + room.size[1]):
+            if newLoc[0] < 0 or newLoc[0] >= screenBounds[0] or newLoc[1] < 0 or newLoc[1] >= screenBounds[1]:
                 validMoves[direction] = False
-                break
+                continue
 
-    return validMoves
+            for room in self.roomList:
+                if (not self.collide(newLoc, room.loc[0] + room.doorLoc[0], room.loc[0] + room.doorLoc[0] + 50, room.loc[1] + room.doorLoc[1], room.loc[1] + room.doorLoc[1] + 50)) and \
+                        (not self.collide(newLoc, room.loc[0] + 50, room.loc[0] + room.size[0] - 50, room.loc[1] + 50, room.loc[1] + room.size[1] - 50)) and \
+                        self.collide(newLoc, room.loc[0], room.loc[0] + room.size[0], room.loc[1], room.loc[1] + room.size[1]):
+                    validMoves[direction] = False
+                    break
 
-def update_player_sprites(screen, p1, p2):
-    #p1
-    surf = pygame.image.load(os.path.join('img', "WizardSprite.png")).convert_alpha()
-    surf.set_colorkey((0,0,0))
-    rect = surf.get_rect(topleft=(p1.loc[0], p1.loc[1]))
-    surf = pygame.transform.scale(surf, (50, 50)) 
-    #p2
-    surf2 = pygame.image.load(os.path.join('img', "WizardSprite.png")).convert_alpha()
-    surf2.set_colorkey((0,0,0))
-    rect2 = surf2.get_rect(topleft=(p2.loc[0], p2.loc[1]))
-    surf2 = pygame.transform.scale(surf2, (50, 50)) 
-
-    screen.blit(surf, rect)
-    screen.blit(surf2, rect2)
-
+        return validMoves
