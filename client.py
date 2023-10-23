@@ -24,10 +24,11 @@ def GamePlayLoop(player:Player, other_player: Player):
     This other_player object should be updated to an array of Player objects
     in the future to support 6 players.
     """
+    playerRolled = False
+
     gameboard = GameBoard(screen)
     gameboard.build_game_board(player.movesRemaining)
     gameboard.update_player_sprites(player, other_player)
-
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
@@ -39,17 +40,19 @@ def GamePlayLoop(player:Player, other_player: Player):
                 print('Rolling dice...')
                 player.set_moves_remaining(randrange(1, 6))
                 gameboard.build_game_board(player.movesRemaining)
+                playerRolled = True
 
-                while player.activePlayer==player.id:
-                    pygame.event.pump()
-                    player.update(gameboard.get_valid_moves(player.loc, (SCREEN_WIDTH, SCREEN_HEIGHT)))
-                    
-                    gameboard.build_game_board(player.movesRemaining)
-                    gameboard.update_player_sprites(player, other_player)
-                    clock.tick(30)
+        while player.activePlayer==player.id and playerRolled:
+            pygame.event.pump()
+            # move player and manage active state
+            player.update(gameboard.get_valid_moves(player.loc, (SCREEN_WIDTH, SCREEN_HEIGHT)))
+            
+            gameboard.build_game_board(player.movesRemaining)
+            gameboard.update_player_sprites(player, other_player)
+            clock.tick(30)
 
-                print("player ",player.id, " finished turn")
-
+        print("player ",player.id, " finished turn")
+        playerRolled = False
 
     return player
 
@@ -75,8 +78,7 @@ def main():
         # get player status after a game movement
         p1 = GamePlayLoop(p1, p2)
 
-    sock.close()
-    pygame.quit()
+
 
 
 main()
