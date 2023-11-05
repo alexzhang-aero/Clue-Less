@@ -1,0 +1,34 @@
+@startuml ClueGame
+
+actor Player
+participant Game
+participant Board
+participant Network
+participant Server
+participant Client
+
+Player -> Game: Start Game
+loop Players Take Turns
+    Player -> Game: Roll Dice
+    Player -> Game: Move Piece
+    alt Accusation Ready?
+        Player -> Game: Make Accusation
+        Player -> Game: Provide Guess
+        Game -> Board: Resolve Accusation
+        Board --> Game: Accusation Result
+        Game -> Player: Show Result
+    else
+        Player -> Game: Continue Playing
+    end
+    Player --> Game: End Turn
+end
+Player -> Game: End Game
+
+Client -> Network: Connect to Server
+Network -> Server: Handle Connection
+Client -> Network: Send Actions
+Network -> Server: Process Actions
+Server -> Network: Send Responses
+Network --> Client: Receive Responses
+
+@enduml
