@@ -1,0 +1,50 @@
+@startuml ClueGameActivity
+
+|Lobby|
+start
+:Enter Lobby;
+if (Players Joined?) then (yes)
+  |Multiplayer|
+  :Initialize Multiplayer Session;
+  if (Game Started?) then (yes)
+    |Game|
+    :Start Turn;
+    if (Player's Turn?) then (yes)
+      |Player|
+      :Roll Dice;
+      if (Dice Rolled Successfully?) then (yes)
+        :Move Piece;
+        if (Accusation Ready?) then (yes)
+          |Player|
+          :Make Accusation;
+          if (Accusation Correct?) then (yes)
+            |Game|
+            :End Game;
+          else (no)
+            |Game|
+            :Continue Playing;
+          endif
+        else (no)
+          |Game|
+          :End Turn;
+        endif
+      else (no)
+        |Game|
+        :End Turn;
+      endif
+    else (no)
+      |Game|
+      :Wait for Other Players;
+    endif
+  else (no)
+    |Game|
+    :Game Over;
+  endif
+else (no)
+  :Return to Lobby;
+endif
+|Lobby|
+:Leave Lobby;
+stop
+
+@enduml
