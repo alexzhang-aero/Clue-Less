@@ -9,26 +9,26 @@ participant Client
 
 Player -> Game: Start Game
 loop Players Take Turns
-    Player -> Game: Roll Dice
-    Player -> Game: Move Piece
+    Player -> Game: RollDice()
+    Player -> Game: MovePiece()
     alt Accusation Ready?
-        Player -> Game: Make Accusation
-        Player -> Game: Provide Guess
-        Game -> Board: Resolve Accusation
-        Board --> Game: Accusation Result
-        Game -> Player: Show Result
+        Player -> Game: makeAccusation()
+        Player -> Game: getGuess()
+        Game -> Board: resolveAccusation()
+        Board --> Game: accusationResult()
+        Game -> Player: getResult()
     else
         Player -> Game: Continue Playing
     end
-    Player --> Game: End Turn
+    Player --> Game: endTurn()
 end
-Player -> Game: End Game
+Player -> Game: endGame()
 
 Client -> Network: Connect to Server
 Network -> Server: Handle Connection
-Client -> Network: Send Actions
+Client -> Network: sendActions
 Network -> Server: Process Actions
-Server -> Network: Send Responses
-Network --> Client: Receive Responses
+Server -> Network: Send()
+Network --> Client: Receive()
 
 @enduml

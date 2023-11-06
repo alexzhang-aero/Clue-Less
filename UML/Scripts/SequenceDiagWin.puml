@@ -6,13 +6,13 @@ participant Network
 participant Server
 participant GameBoard
 
-Player -> Client: Win Game
-Client -> Network: Send Win Game Signal
+Player -> Client: Win()
+Client -> Network: Send(win)
 Network -> Server: Handle Win Game Signal
 Server -> GameBoard: Determine Winning Player
 GameBoard --> Server: Winner Information
 Server --> Network: Send Win Game Notification
-Network --> Client: Receive Win Game Notification
-Client -> Player: Display Win Message
+Network --> Client: receive()
+Client -> Player: displayMessage()
 
 @enduml
