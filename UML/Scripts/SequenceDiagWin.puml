@@ -1,0 +1,18 @@
+@startuml ClueGameWinSequence
+
+actor User as Player
+participant Client
+participant Network
+participant Server
+participant GameBoard
+
+Player -> Client: Win Game
+Client -> Network: Send Win Game Signal
+Network -> Server: Handle Win Game Signal
+Server -> GameBoard: Determine Winning Player
+GameBoard --> Server: Winner Information
+Server --> Network: Send Win Game Notification
+Network --> Client: Receive Win Game Notification
+Client -> Player: Display Win Message
+
+@enduml
