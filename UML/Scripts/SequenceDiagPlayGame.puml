@@ -1,0 +1,20 @@
+@startuml
+actor User as Player
+participant Client
+participant Network
+participant Server
+participant GameBoard
+
+Player -> Client: gameStart()
+Client -> Network: Connect()
+Network -> Server: Handle Connection
+Server -> Network: SendMessage()
+Network --> Client: ReceiveMessage("Welcome!")
+Player -> Client: Roll()
+Client -> Network: SendRequest()
+Network -> Server: Handle Roll Dice Request
+Server -> GameBoard: Roll()
+GameBoard --> Server: returnResult()
+Server --> Network: Result
+Network --> Client: Receive Dice Result
+@enduml
