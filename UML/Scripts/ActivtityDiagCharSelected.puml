@@ -1,0 +1,38 @@
+@startuml ClueGameCharacterSelection
+
+|Lobby|
+start
+:Enter Lobby;
+if (Players Joined?) then (yes)
+  |Multiplayer|
+  :Initialize Multiplayer Session;
+  if (Character Selection Phase?) then (yes)
+    |Player|
+    :Choose Character;
+    if (Character Available?) then (yes)
+      |Player|
+      :Confirm Character Selection;
+      if (All Players Confirmed?) then (yes)
+        |Game|
+        :Start Game;
+        stop
+      else (no)
+        |Player|
+        :Wait for Others;
+      endif
+    else (no)
+      |Player|
+      :Select Another Character;
+    endif
+  else (no)
+    |Game|
+    :Wait for Character Selection;
+  endif
+else (no)
+  :Return to Lobby;
+endif
+|Lobby|
+:Leave Lobby;
+stop
+
+@enduml

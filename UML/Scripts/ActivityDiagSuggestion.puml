@@ -1,0 +1,39 @@
+@startuml ClueGameBoardNavigation
+
+|Lobby|
+start
+:Enter Lobby;
+if (Players Joined?) then (yes)
+  |Multiplayer|
+  :Initialize Multiplayer Session;
+  if (Game Started?) then (yes)
+    |Player|
+    :Navigate the Board;
+    |Game Engine|
+    if (Valid Move?) then (yes)
+      |Game Engine|
+      :Update Player Position;
+      |Board|
+      :Check for Clues;
+      if (Clue Found?) then (yes)
+        |Player|
+        :Show Clue;
+      endif
+      |Player|
+      :Continue Playing;
+    else (no)
+      |Player|
+      :Invalid Move;
+    endif
+  else (no)
+    |Multiplayer|
+    :Wait for Game Start;
+  endif
+else (no)
+  :Return to Lobby;
+endif
+|Lobby|
+:Leave Lobby;
+stop
+
+@enduml

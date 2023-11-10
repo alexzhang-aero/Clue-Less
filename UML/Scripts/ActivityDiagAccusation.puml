@@ -1,0 +1,30 @@
+@startuml ClueGameAccusationActivity
+
+|Player|
+start
+:Start Accusation;
+if (Valid Accusation?) then (yes)
+  :Make Accusation;
+  if (Accusation Sent?) then (yes)
+    |Game Controller|
+    :Resolve Accusation;
+    if (Correct Accusation?) then (yes)
+      |Game Controller|
+      :End Game;
+      :Show Game Over Screen;
+      stop
+    else (no)
+      |Game Controller|
+      :Continue Playing;
+      stop
+    endif
+  else (no)
+    :End Turn;
+    stop
+  endif
+else (no)
+  :Continue Playing;
+  stop
+endif
+
+@enduml
