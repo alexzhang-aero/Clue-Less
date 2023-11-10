@@ -10,8 +10,9 @@ from _thread import *
 import sys
 import pickle
 from Player import Player
+from Deck import DealCards
 
-server = "192.168.1.202"
+server = "127.0.0.1"
 port = 5555
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -24,9 +25,9 @@ except socket.error as e:
 s.listen(2)
 print("Waiting for a connection, Server Started")
 
-
-p1 = Player([450, 450], None, None, None, id=0, activePlayer=0)
-p2 = Player([485, 450], None, None, None, id=1, activePlayer=0)
+murderEnvelope, cardPiles = DealCards(2)
+p1 = Player([450, 450], cardPiles[0], id=0, activePlayer=0)
+p2 = Player([500, 450], cardPiles[1], id=1, activePlayer=0)
 
 
 players = [p1,p2]

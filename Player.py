@@ -1,5 +1,6 @@
 import pygame
 import os
+import Deck
 from pygame.locals import (
     K_UP,
     K_DOWN,
@@ -10,26 +11,25 @@ from pygame.locals import (
 class Player(pygame.sprite.Sprite):
     def __init__(self,
                  loc,
-                 weaponIn,
-                 suspectIn,
-                 roomIn,
+                 dealtCards,
                  id:int,
                  activePlayer:int):
         super(Player, self).__init__()
         
 
-        self.dealtCards = {'weapon':  weaponIn,
-                           'suspect': suspectIn,
-                           'room':    roomIn}
-        self.knownCards = {'weapon':  [weaponIn],
-                           'suspect': [suspectIn],
-                           'room':    [roomIn]}
+        self.dealtCards = dealtCards
+        self.knownCards = dealtCards
 
         self.movesRemaining = 0
         self.keyPressed = False
         self.loc = loc
-        self.id = id    
+        self.id = id
         self.activePlayer = activePlayer
+
+        self.guessing = False
+        self.guessingCards = {Deck.ClueType.ROOM: None,
+                              Deck.ClueType.WEAPON: None,
+                              Deck.ClueType.SUSPECT: None}
 
     def convert_alpha(self):
         self.surf = self.surf.convert_alpha()
@@ -73,12 +73,29 @@ class Player(pygame.sprite.Sprite):
                 else:
                     self.activePlayer = 1
 
-    
-    # def move(self,loc):
-    #     self.rect.move_ip(loc[0], loc[1])
-    #     self.loc = loc
-
     def __repr__(self):
         return f"Player {self.id} is at {self.loc}"
 
-        
+    def ToggleGuessedCard(self, card):
+        newCardType = card.type
+        if self.guessingCards[newCardType] is not None and self.guessingCards[newCardType].equals(card):
+            self.guessingCards[newCardType] = None
+        else:
+            self.guessingCards[newCardType] = card
+            
+    def AllCardTypesGuessed(self):
+        allGuessed = True
+        for cardType in self.guessingCards:
+            if self.guessingCards[cardType] is None:
+                allGuessed = False
+        return allGuessed
+    
+    def ClearGuesses(self):
+        self.guessing = False
+        self.guessingCards = {Deck.ClueType.ROOM: None,
+                              Deck.ClueType.WEAPON: None,
+                              Deck.ClueType.SUSPECT: None}
+        if self.id==1:
+            self.activePlayer = 0
+        else:
+            self.activePlayer = 1
