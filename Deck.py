@@ -18,7 +18,7 @@ class Card():
         self.name = name
         self.fileName = fileName
         self.id = id
-        
+
     def equals(self, cardIn):
         return cardIn.type == self.type and cardIn.id == self.id
 
@@ -27,7 +27,8 @@ class Deck():
         self.cards = []
         
     def AddCard(self, card):
-        self.cards.append(card)
+        if not self.IsCardInDeck(card):
+            self.cards.append(card)
     
     def RemoveCard(self, card):
         self.cards.remove(card)
@@ -38,16 +39,38 @@ class Deck():
                 return True
         return False
 
+    def Count(self):
+        return len(self.cards)
+    
+    def Print(self):
+        for card in self.cards:
+            print(card.name)
+
 def GetAllCards():
-    roomList = [Card(ClueType.ROOM, 'Lab', 'Lab.png', 0),
-                Card(ClueType.ROOM, 'Kitchen', 'Kitchen.png', 1),
-                Card(ClueType.ROOM, 'Dorm', 'Dorm.png', 2)]
-    weaponList = [Card(ClueType.WEAPON, 'Wand', 'Wand.png', 0),
-                  Card(ClueType.WEAPON, 'Sword', 'Sword.png', 1),
-                  Card(ClueType.WEAPON, 'Staff', 'Staff.png', 2)]
-    suspectList = [Card(ClueType.SUSPECT, 'Wizard', 'Wizard.png', 0),
-                   Card(ClueType.SUSPECT, 'Knight', 'Knight.png', 1),
-                   Card(ClueType.SUSPECT, 'King', 'King.png', 2)]
+    roomList = [Card(ClueType.ROOM, 'Lab', 'Rooms/lab.png', 0),
+                Card(ClueType.ROOM, 'Armory', 'Rooms/armory.png', 1),
+                Card(ClueType.ROOM, 'Ballroom', 'Rooms/ballroom.png', 2),
+                Card(ClueType.ROOM, 'Bedroom', 'Rooms/bedroom.png', 3),
+                Card(ClueType.ROOM, 'Courtyard', 'Rooms/courtyard.png', 4),
+                Card(ClueType.ROOM, 'Dragon\'s Lair', 'Rooms/dragonlair.png', 5),
+                Card(ClueType.ROOM, 'Library', 'Rooms/library.png', 6),
+                Card(ClueType.ROOM, 'Main Hall', 'Rooms/mainhall.png', 7),
+                Card(ClueType.ROOM, 'Observation room', 'Rooms/observationroom.png', 8)]
+
+    weaponList = [Card(ClueType.WEAPON, 'Wand', 'Clues/wand.png', 0),
+                  Card(ClueType.WEAPON, 'Dagger', 'Clues/dagger.png', 1),
+                  Card(ClueType.WEAPON, 'Staff', 'Clues/staff.png', 2),
+                  Card(ClueType.WEAPON, 'Mace', 'Clues/mace.png', 3),
+                  Card(ClueType.WEAPON, 'Whip', 'Clues/whip.png', 4),
+                  Card(ClueType.WEAPON, 'Poison', 'Clues/poison.png', 5)]
+
+    suspectList = [Card(ClueType.SUSPECT, 'Wizard', 'Players/Wizard.png', 0),
+                   Card(ClueType.SUSPECT, 'Knight', 'Players/Knight.png', 1),
+                   Card(ClueType.SUSPECT, 'Dwarf', 'Players/Dwarf.png', 2),
+                   Card(ClueType.SUSPECT, 'Princess', 'Players/Princess.png', 3),
+                   Card(ClueType.SUSPECT, 'Vampire', 'Players/Vampire.png', 4),
+                   Card(ClueType.SUSPECT, 'Witch', 'Players/Witch.png', 5)]
+
     return roomList, weaponList, suspectList
 
 def DealCards(numPlayers):
@@ -72,3 +95,10 @@ def DealCards(numPlayers):
                 playerId = 0
         
     return murderEnvelope, cardPiles
+
+def DictToDeck(dictOfCards):
+    deckOut = Deck()
+    for x in dictOfCards:
+        if dictOfCards[x]:
+            deckOut.AddCard(dictOfCards[x])
+    return deckOut

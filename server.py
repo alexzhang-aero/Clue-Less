@@ -9,8 +9,8 @@ import socket
 from _thread import *
 import sys
 import pickle
-from Player import Player
-from Deck import DealCards
+from Player import Player, PlayerState
+from Deck import DealCards, ClueType
 
 server = "127.0.0.1"
 port = 5555
@@ -25,37 +25,48 @@ except socket.error as e:
 s.listen(2)
 print("Waiting for a connection, Server Started")
 
-murderEnvelope, cardPiles = DealCards(2)
-p1 = Player([450, 450], cardPiles[0], id=0, activePlayer=0)
-p2 = Player([500, 450], cardPiles[1], id=1, activePlayer=0)
+murderEnvelope, cardPiles = DealCards(6)
 
+players = [Player([3, 0], cardPiles[0], id=0, name='Dwarf'),
+           Player([0, 1], cardPiles[1], id=1, name='Knight'),
+           Player([4, 1], cardPiles[2], id=2, name='Princess'),
+           Player([0, 3], cardPiles[3], id=3, name='Vampire'),
+           Player([1, 4], cardPiles[4], id=4, name='Witch'),
+           Player([3, 4], cardPiles[5], id=5, name='Wizard')]
 
-players = [p1,p2]
+print(murderEnvelope[ClueType.ROOM].name)
+print(murderEnvelope[ClueType.WEAPON].name)
+print(murderEnvelope[ClueType.SUSPECT].name)
 
-def threaded_client(conn, player:int):
-    playerWaitingForTurnCompletion = 0
+def threaded_client(conn, playerId:int):
 
-    conn.send(pickle.dumps(players[player]))
-    other_player_data = ""
+    if playerId == 0:
+        players[playerId].state = PlayerState.MOVING
+
+    conn.send(pickle.dumps(players[playerId]))
     while True:
         try:
-            data_received = conn.recv(2048)
-            if data_received:
-
-                data = pickle.loads(data_received)
-                players[player] = data
+            dataReceived = conn.recv(8192)
+            if dataReceived:
+                playerReceived = pickle.loads(dataReceived)
                 
-                other_player_data = players[0] if player == 1 else players[1]
-                    
-                # check if the players have changed turns
-                if players[player].activePlayer!=playerWaitingForTurnCompletion:
-                    playerWaitingForTurnCompletion = other_player_data.id
-                    other_player_data.activePlayer = playerWaitingForTurnCompletion
+                if playerReceived.state == PlayerState.ACCUSED:
+                    if murderEnvelope[ClueType.ROOM].equals(playerReceived.guessingCards[ClueType.ROOM]) and\
+                       murderEnvelope[ClueType.WEAPON].equals(playerReceived.guessingCards[ClueType.WEAPON]) and\
+                       murderEnvelope[ClueType.SUSPECT].equals(playerReceived.guessingCards[ClueType.SUSPECT]):
+                        for player in players:
+                            player.state = PlayerState.LOSER
+                        playerReceived.state = PlayerState.WINNER
+                    else:
+                        playerReceived.state = PlayerState.OUT
 
-                print("Received: ", print(data))
-                print("Sending : ", print(other_player_data))
+                players[playerReceived.id] = playerReceived
 
-                conn.sendall(pickle.dumps(other_player_data))
+
+                print("Received: ", print(playerReceived))
+                print("Sending : ", print(players))
+
+                conn.sendall(pickle.dumps(players))
             else:
                 print("No data received")
                 break

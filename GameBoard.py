@@ -1,7 +1,9 @@
 import pygame
 import os
 import Deck
+from Room import CreateRooms
 from random import randrange
+from Player import PlayerState
 
 from pygame.locals import (
     RLEACCEL
@@ -10,191 +12,298 @@ from pygame.locals import (
 white = (255, 255, 255)
 green = (0, 255, 0)
 blue = (0, 0, 128)
+red = (255, 0, 0)
 black = (0, 0, 0)
 gray = (50, 50, 50)
 gold = (218,165,32)
 dimGold = (100,50,0)
 
-class Room(pygame.sprite.Sprite):
-    def __init__(self,
-                 loc,
-                 size,
-                 doorLoc,
-                 fileName,
-                 clue):
-        super(Room, self).__init__()
-        self.surf = pygame.image.load(os.path.join('img', 'Rooms', fileName)).convert()
-        self.surf = pygame.transform.scale(self.surf, (size[0], size[1])) 
-        self.surf.set_colorkey((0, 0, 0), RLEACCEL)
-        self.rect = self.surf.get_rect(topleft=(loc[0], loc[1]))
-        self.loc = loc
-        self.size = size
-        self.doorLoc = doorLoc
-        self.clue = clue
-
 class GameBoard:
-    def __init__(self, screen):
+    def __init__(self, 
+                 screen,
+                 size):
         self.screen = screen
-        self.roomList = self.create_rooms()
-
-        self.surf = pygame.image.load(os.path.join('img', "WizardSprite.png")).convert_alpha()
-        self.surf.set_colorkey((0, 0, 0))
-
-        self.surf2 = pygame.image.load(os.path.join('img', "WizardSprite.png")).convert_alpha()
-        self.surf2.set_colorkey((0, 0, 0))
-        
+        self.size = (size[0], size[1] - 200)
         self.buttons = []
 
-    def create_rooms(self):
-        roomList = []
-        roomDetails = [{'loc': [300, 0], 'size': [350, 350], 'doorLoc': [125, 300], 'fileName': 'LabRoom.png', 'clue': None}]
-        for room in roomDetails:
-            roomList.append(Room(room['loc'], room['size'], room['doorLoc'], room['fileName'], room['clue']))
-        return roomList
+        roomsizeX = self.size[0] / 4
+        roomsizeY = self.size[1] / 4
+        roomClueList, _, _ = Deck.GetAllCards()
+        self.roomList = CreateRooms(roomClueList, (roomsizeX, roomsizeY))
 
-    def build_game_board(self, player):
-        movesRemaining = player.movesRemaining
+    def BuildGameBoard(self, players, userID):
+        userPlayer = players[userID]
         self.screen.fill((0, 0, 0))
-        self.buttons = []
+        
+        if userPlayer.state in [PlayerState.WINNER, PlayerState.LOSER]:
+            self.BuildGameOver(players)
+            pygame.display.flip()
+            return 
 
         backgroundSurf = pygame.image.load(os.path.join('img', 'Background.png')).convert()
-        backgroundSurf = pygame.transform.scale(backgroundSurf, (1000, 1000)) 
+        backgroundSurf = pygame.transform.scale(backgroundSurf, self.size) 
         backgroundSurf.set_colorkey((0, 0, 0), RLEACCEL)
         self.screen.blit(backgroundSurf, backgroundSurf.get_rect(topleft=(0, 0)))
 
-        for room in self.roomList:
-            self.screen.blit(room.surf, room.rect)
 
-        hudTextColor = dimGold
-        if player.guessing:
-            clueScreenLocations = self.BuildGuessWindow(player)
+        for room in self.roomList:
+            roomXLoc = (room.loc[0] * (self.size[0] / 6)) + (room.loc[0] * (self.size[0] / 48))
+            roomYLoc = (room.loc[1] * (self.size[1] / 6)) + (room.loc[1] * (self.size[1] / 48))
+            self.screen.blit(room.surf,
+                             room.surf.get_rect(topleft=(roomXLoc, roomYLoc)))
+
+            playerInRoomCol = 0
+            playerInRoomRow = 0
+            for player in players:
+                if player.state != PlayerState.OUT and\
+                    room.loc[0] == player.loc[0] and room.loc[1] == player.loc[1]:
+                    spriteXLoc = roomXLoc + (playerInRoomCol * (room.size[0] / 3))
+                    spriteYLoc = roomYLoc + (playerInRoomRow * (room.size[1] / 2))
+                    sprite = player.CreateSprite((room.size[0] / 3, room.size[1] / 3))
+                    self.screen.blit(sprite,
+                                    sprite.get_rect(topleft=(spriteXLoc, spriteYLoc)))
+                    playerInRoomCol += 1
+                    if playerInRoomCol == 3:
+                        playerInRoomRow += 1
+
+        for player in players:
+            if player.state != PlayerState.OUT and\
+               player.loc[0] % 2 or player.loc[1] % 2:
+                spriteXLoc = (player.loc[0] * ((self.size[0] * 3) / 16)) + (self.size[0] / 8) - (self.size[0] / 20)
+                spriteYLoc = (player.loc[1] * ((self.size[1] * 3) / 16)) + (self.size[1] / 8) - (self.size[1] / 20)
+                sprite = player.CreateSprite((self.size[0] / 10, self.size[1] / 10))
+                self.screen.blit(sprite,
+                                 sprite.get_rect(topleft=(spriteXLoc, spriteYLoc)))
+
+        hudText = ''
+        for player in players:
+            if player.CreateHudText(userID):
+                hudText = player.CreateHudText(userID)
+                break
+
+        font = pygame.font.Font('freesansbold.ttf', 32)
+        text = font.render(hudText, True, gold, None)
+        self.screen.blit(text, text.get_rect(topleft=(5, self.size[1] + 80)))
+
+        hudSurf = userPlayer.CreateHudImg((200,200))
+        self.screen.blit(hudSurf, hudSurf.get_rect(topleft=(self.size[0]/2, self.size[1])))
+
+        font = pygame.font.Font('freesansbold.ttf', 32)
+        if userPlayer.state == PlayerState.OUT:
+            text = font.render('YOU LOST', True, red, gray)
+            self.screen.blit(text, text.get_rect(topleft=(self.size[0] - 285, self.size[1] + 80)))
+        else:
+            text = font.render('Make Accusation', True, red, gray)
+            self.screen.blit(text, text.get_rect(topleft=(self.size[0] - 285, self.size[1] + 80)))
+            self.buttons.append((self.size[0] - 300, self.size[0] , self.size[1], self.size[1] + 200, MakeAccusation, None))
+
+        if userPlayer.state == PlayerState.GUESSING:
+            currRoom = self.GetRoomFromLoc(userPlayer.loc)
+            userPlayer.guessingCards[Deck.ClueType.ROOM] = currRoom.clue
+            _, weaponList, suspectList = Deck.GetAllCards()
+            clueScreenLocations = self.BuildGuessWindow([],
+                                                        weaponList,
+                                                        suspectList,
+                                                        Deck.DictToDeck(userPlayer.guessingCards),
+                                                        userPlayer.knownCards,
+                                                        3,
+                                                        'Submit Suggestion')
             lastLoc = 0
             for clue in clueScreenLocations:
                 clueLoc = clueScreenLocations[clue]
-                self.buttons.append((clueLoc[0], clueLoc[0] + 100 , clueLoc[1], clueLoc[1] + 40, ToggleGuessedClue, clue))
-                lastLoc= (clueLoc[0], clueLoc[1] + 40)
-            if player.AllCardTypesGuessed():
-                self.buttons.append((lastLoc[0], lastLoc[0] + 100 , lastLoc[1], lastLoc[1] + 40, SubmitGuess, None))
-        elif player.id == player.activePlayer:
-            self.buttons.append((0, 300, 1000, 1200, RollDice, None))
-            self.buttons.append((300, 900, 1000, 1200, SetGuessing, None))
-            hudTextColor = gold
-            
-        font = pygame.font.Font('freesansbold.ttf', 32)
-        text = font.render('Moves Remaining: {}'.format(movesRemaining), True, hudTextColor, None)
-        self.screen.blit(text, text.get_rect(topleft=(600, 1100)))
-        text = font.render('Roll The Dice', True, hudTextColor, None)
-        self.screen.blit(text, text.get_rect(topleft=(50, 1100)))
-        text = font.render('Make Guess', True, hudTextColor, None)
-        self.screen.blit(text, text.get_rect(topleft=(300, 1100)))
+                self.buttons.append((clueLoc[0], clueLoc[0] + 100 , clueLoc[1], clueLoc[1] + clueLoc[2], ToggleGuessedClue, clue))
+                lastLoc = (clueLoc[0], clueLoc[1] + clueLoc[2])
+            if userPlayer.AllCardTypesGuessed():
+                self.buttons.append((lastLoc[0], lastLoc[0] + 100 , lastLoc[1], lastLoc[1] + clueLoc[2], SubmitGuess, None))
+
+        elif userPlayer.state == PlayerState.RESPONDING_TO_GUESS:
+            guessedCards = None
+            for player in players:
+                if player.state == PlayerState.AWAITING_GUESS_RESPONSE:
+                    guessedCards = player.guessingCards
+
+            roomList = []
+            weaponList = []
+            suspectList = []
+            if userPlayer.dealtCards.IsCardInDeck(guessedCards[Deck.ClueType.ROOM]):
+                roomList = [guessedCards[Deck.ClueType.ROOM]]
+            if userPlayer.dealtCards.IsCardInDeck(guessedCards[Deck.ClueType.WEAPON]):
+                weaponList = [guessedCards[Deck.ClueType.WEAPON]]
+            if userPlayer.dealtCards.IsCardInDeck(guessedCards[Deck.ClueType.SUSPECT]):
+                suspectList = [guessedCards[Deck.ClueType.SUSPECT]]
+
+            clueScreenLocations = self.BuildGuessWindow(roomList,
+                                                        weaponList,
+                                                        suspectList,
+                                                        userPlayer.guessResponse,
+                                                        None,
+                                                        1,
+                                                        'Submit Response')
+            lastLoc = 0
+            for clue in clueScreenLocations:
+                clueLoc = clueScreenLocations[clue]
+                self.buttons.append((clueLoc[0], clueLoc[0] + 100 , clueLoc[1], clueLoc[1] + clueLoc[2], ToggleGuessedClueResponse, clue))
+                lastLoc = (clueLoc[0], clueLoc[1] + clueLoc[2])
+            if userPlayer.guessResponse.Count():
+                self.buttons.append((lastLoc[0], lastLoc[0] + 100 , lastLoc[1], lastLoc[1] + clueLoc[2], SubmitGuessResponse, None))
+        
+        elif userPlayer.state == PlayerState.ACCUSING:
+            roomList, weaponList, suspectList = Deck.GetAllCards()
+            clueScreenLocations = self.BuildGuessWindow(roomList,
+                                                        weaponList,
+                                                        suspectList,
+                                                        Deck.DictToDeck(userPlayer.guessingCards),
+                                                        userPlayer.knownCards,
+                                                        3,
+                                                        'Submit Accusation')
+            lastLoc = 0
+            for clue in clueScreenLocations:
+                clueLoc = clueScreenLocations[clue]
+                self.buttons.append((clueLoc[0], clueLoc[0] + 100 , clueLoc[1], clueLoc[1] + clueLoc[2], ToggleGuessedClue, clue))
+                lastLoc = (clueLoc[0], clueLoc[1] + clueLoc[2])
+            if userPlayer.AllCardTypesGuessed():
+                self.buttons.append((lastLoc[0], lastLoc[0] + 100 , lastLoc[1], lastLoc[1] + clueLoc[2], SubmitAccusation, None))
+
         pygame.display.flip()
 
-    def update_player_sprites(self, p1, p2):
-        if not p1.guessing:
-            # Player 1
-            rect = self.surf.get_rect(topleft=(p1.loc[0], p1.loc[1]))
-            self.surf = pygame.transform.scale(self.surf, (50, 50))
+    def BuildGuessWindow(self,
+                         roomList,
+                         weaponList,
+                         suspectList,
+                         pickedCards,
+                         knownCards,
+                         neededSelections,
+                         guessTypeString):
 
-            # Player 2
-            rect2 = self.surf2.get_rect(topleft=(p2.loc[0], p2.loc[1]))
-            self.surf2 = pygame.transform.scale(self.surf2, (50, 50))
-
-            self.screen.blit(self.surf, rect)
-            self.screen.blit(self.surf2, rect2)
-            pygame.display.flip()
-
-    def collide(self, loc, xMin, xMax, yMin, yMax):
-        return loc[0] >= xMin and loc[0] < xMax and loc[1] >= yMin and loc[1] < yMax
-
-    def get_valid_moves(self, playerLoc, screenBounds):
-        validMoves = {'up': True, 'right': True, 'down': True, 'left': True}
-        newLocList = {'up': (playerLoc[0], playerLoc[1] - 50),
-                      'right': (playerLoc[0] + 50, playerLoc[1]),
-                      'down': (playerLoc[0], playerLoc[1] + 50),
-                      'left': (playerLoc[0] - 50, playerLoc[1])}
-
-        for direction in newLocList:
-            newLoc = newLocList[direction]
-
-            if newLoc[0] < 0 or newLoc[0] >= screenBounds[0] or newLoc[1] < 0 or newLoc[1] >= screenBounds[1]:
-                validMoves[direction] = False
-                continue
-
-            for room in self.roomList:
-                if (not self.collide(newLoc, room.loc[0] + room.doorLoc[0], room.loc[0] + room.doorLoc[0] + 50, room.loc[1] + room.doorLoc[1], room.loc[1] + room.doorLoc[1] + 50)) and \
-                        (not self.collide(newLoc, room.loc[0] + 50, room.loc[0] + room.size[0] - 50, room.loc[1] + 50, room.loc[1] + room.size[1] - 50)) and \
-                        self.collide(newLoc, room.loc[0], room.loc[0] + room.size[0], room.loc[1], room.loc[1] + room.size[1]):
-                    validMoves[direction] = False
-                    break
-
-        return validMoves
-    
-    def BuildGuessWindow(self, player):
         backgroundSurf = pygame.image.load(os.path.join('img', 'GuessBoard.png')).convert()
-        backgroundSurf = pygame.transform.scale(backgroundSurf, (1000, 1000)) 
+        backgroundSurf = pygame.transform.scale(backgroundSurf, (1000, 1000))
         backgroundSurf.set_colorkey((0, 0, 0), RLEACCEL)
-        backgroundSurf.convert_alpha()
+        backgroundSurf = backgroundSurf.convert_alpha()
         self.screen.blit(backgroundSurf, backgroundSurf.get_rect(topleft=(0, 0)))
-        backgroundSurf.convert_alpha()
-        roomList, weaponList, suspectList = Deck.GetAllCards()
+
+        numOfClues = len(roomList) + len(weaponList) + len(suspectList) + 5
         
-        clueTypeFont = pygame.font.Font('freesansbold.ttf', 50)
-        clueNameFont = pygame.font.Font('freesansbold.ttf', 40)
+        spacePerClue = min(int(800 / numOfClues), 100)
+
+        clueTypeFont = pygame.font.Font('freesansbold.ttf', spacePerClue)
+        clueNameFont = pygame.font.Font('freesansbold.ttf', spacePerClue - 5)
 
         vertOffset = 120
 
         clueScreenLocations = {}
 
-        for clueList, clueType, clueTypeString in [[roomList, Deck.ClueType.ROOM, 'Rooms'],
-                                                   [weaponList, Deck.ClueType.WEAPON, 'Weapons'],
-                                                   [suspectList, Deck.ClueType.SUSPECT, 'Suspects']]:
+        for clueList, clueType, clueTypeString in [[roomList, Deck.ClueType.WEAPON, 'Room'],
+                                                   [weaponList, Deck.ClueType.WEAPON, 'Weapon'],
+                                                   [suspectList, Deck.ClueType.SUSPECT, 'Suspect']]:
+            if not clueList:
+                continue
             text = clueTypeFont.render(clueTypeString, True, blue, None)
             self.screen.blit(text, text.get_rect(topleft=(200, vertOffset)))
-            vertOffset += 70
+            vertOffset += spacePerClue
             for clue in clueList:
 
                 textColor = black
-                if player.guessingCards[clueType] and player.guessingCards[clueType].equals(clue):
+                if pickedCards and pickedCards.IsCardInDeck(clue):
                     textColor = green
-                elif player.knownCards.IsCardInDeck(clue):
+                elif knownCards and knownCards.IsCardInDeck(clue):
                     textColor = gray
 
                 text = clueNameFont.render(clue.name, True, textColor, None)
                 self.screen.blit(text, text.get_rect(topleft=(200, vertOffset)))
-                clueScreenLocations[clue] = (200, vertOffset)
-                vertOffset += 40
-            vertOffset += 40
-        if player.AllCardTypesGuessed():
-            text = clueNameFont.render('SUBMIT GUESS', True, green, None)
+                clueScreenLocations[clue] = (200, vertOffset, spacePerClue)
+                vertOffset += spacePerClue
+
+        if pickedCards.Count() == neededSelections:
+            text = clueNameFont.render(guessTypeString, True, green, None)
             self.screen.blit(text, text.get_rect(topleft=(200, vertOffset)))
+
         return clueScreenLocations
+
+    def BuildGameOver(self, players):
+        winner = None
+        for player in players:
+            if player.state == PlayerState.WINNER:
+                winner = player
+
+        font = pygame.font.Font('freesansbold.ttf', 50)
+        text = font.render('Game Over', True, gold, None)
+        self.screen.blit(text, text.get_rect(topleft=(self.size[0]/2 - 120, 30)))
+        text = font.render('Winner:', True, gold, None)
+        self.screen.blit(text, text.get_rect(topleft=(self.size[0]/2 - 70, 80)))
     
+        hudSurf = winner.CreateHudImg((500,500))
+        self.screen.blit(hudSurf, hudSurf.get_rect(topleft=(self.size[0]/2 - 250, 150)))
+
     def ClickScreen(self, mouseLoc, player):
         print(mouseLoc)
         for button in self.buttons:
             print(button)
-            if self.collide((mouseLoc[0], mouseLoc[1]), button[0], button[1], button[2], button[3]):
+            if collide((mouseLoc[0], mouseLoc[1]), button[0], button[1], button[2], button[3]):
                 if button[5]:
                     player = button[4](player, button[5])
                 else:
                     player = button[4](player)
         return player
 
+    def GetValidMoves(self, allPlayers, playerId):
+        playerLoc = allPlayers[playerId].loc
+        validMoves = {'up': True, 'right': True, 'down': True, 'left': True}
+        newLocList = {'up': (playerLoc[0], playerLoc[1] - 1),
+                     'right': (playerLoc[0] + 1, playerLoc[1]),
+                     'down': (playerLoc[0], playerLoc[1] + 1),
+                     'left': (playerLoc[0] - 1, playerLoc[1])}
 
-def RollDice(player):
-    print('Rolling dice...')
-    player.set_moves_remaining(randrange(1, 6))
-    return player
+        for direction in newLocList:
+            newLoc = newLocList[direction]
 
-def SetGuessing(player):
-    print('Starting Guessing...')
-    player.guessing = True
-    return player
+            if newLoc[0] < 0 or newLoc[0] > 4 or newLoc[1] < 0 or newLoc[1] > 4:
+                validMoves[direction] = False
+                continue
+            
+            if newLoc[0] % 2 != 0 and newLoc[0] % 2 != 0:
+                validMoves[direction] = False
+                continue
+
+            for player in allPlayers:
+                if player.id != playerId and\
+                   (playerLoc[0] % 2 != 0 or playerLoc[0] % 2 != 0) and\
+                   player.loc == playerLoc:
+                    validMoves[direction] = False
+                    continue
+
+        return validMoves
+    
+
+    def GetRoomFromLoc(self, loc):
+        for room in self.roomList:
+            if loc[0] == room.loc[0] and loc[1] == room.loc[1]:
+                return room
+        return None
+
+def collide(loc, xMin, xMax, yMin, yMax):
+    return loc[0] >= xMin and loc[0] < xMax and loc[1] >= yMin and loc[1] < yMax
 
 def ToggleGuessedClue(player, clue):
     player.ToggleGuessedCard(clue)
     return player
 
+def ToggleGuessedClueResponse(player, clue):
+    player.guessResponse = Deck.Deck()
+    player.guessResponse.AddCard(clue)
+    return player
+
 def SubmitGuess(player):
-    player.ClearGuesses()
+    player.state = PlayerState.AWAITING_GUESS_RESPONSE
+    return player
+
+def MakeAccusation(player):
+    player.state = PlayerState.ACCUSING
+    return player
+
+def SubmitAccusation(player):
+    player.state = PlayerState.ACCUSED
+    return player
+
+def SubmitGuessResponse(player):
+    player.state = PlayerState.GUESS_RESPONSE_SENT
     return player

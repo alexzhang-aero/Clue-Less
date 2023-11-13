@@ -1,6 +1,7 @@
 import pygame
 import os
 import Deck
+from enum import Enum
 from pygame.locals import (
     K_UP,
     K_DOWN,
@@ -8,70 +9,106 @@ from pygame.locals import (
     K_RIGHT,
 )
 
+class PlayerState(Enum):
+    WAITING = 0
+    MOVING = 1
+    GUESSING = 2
+    AWAITING_GUESS_RESPONSE = 3
+    RESPONDING_TO_GUESS = 4
+    GUESS_RESPONSE_SENT = 5
+    NO_GUESS_RESPONSE = 6
+    TURN_OVER = 7
+    ACCUSING = 8
+    ACCUSED = 9
+    OUT = 10
+    WINNER = 11
+    LOSER = 12
+
 class Player(pygame.sprite.Sprite):
     def __init__(self,
                  loc,
                  dealtCards,
                  id:int,
-                 activePlayer:int):
+                 name):
         super(Player, self).__init__()
-        
 
         self.dealtCards = dealtCards
         self.knownCards = dealtCards
 
-        self.movesRemaining = 0
-        self.keyPressed = False
         self.loc = loc
         self.id = id
-        self.activePlayer = activePlayer
+        
+        self.name = name
 
-        self.guessing = False
+        self.state = PlayerState.WAITING
+        self.movedByGuess = False
+
         self.guessingCards = {Deck.ClueType.ROOM: None,
                               Deck.ClueType.WEAPON: None,
                               Deck.ClueType.SUSPECT: None}
 
-    def convert_alpha(self):
-        self.surf = self.surf.convert_alpha()
+        self.guessResponse = Deck.Deck()
 
-    def set_moves_remaining(self, moves):
-        self.movesRemaining = moves
+
+    def CreateSprite(self, size):
+        spriteSurf = pygame.image.load(os.path.join('img', 'Players', '{}.png'.format(self.name))).convert_alpha()
+        spriteSurf = pygame.transform.scale(spriteSurf, (size[0], size[1])) 
+        spriteSurf.set_colorkey((0, 0, 0))
+        return spriteSurf
+
+    def CreateHudImg(self, size):
+        hudSurf = pygame.image.load(os.path.join('img', 'Players', '{}HUD.png'.format(self.name))).convert_alpha()
+        hudSurf = pygame.transform.scale(hudSurf, (size[0], size[1])) 
+        hudSurf.set_colorkey((0, 0, 0))
+        return hudSurf
+
+    def convert_alpha(self):
+        self.spriteSurf = self.spriteSurf.convert_alpha()
+
+    def CreateHudText(self, currentPlayerID):
+        hudText = None
+        if self.state == PlayerState.MOVING:
+            if self.id == currentPlayerID:
+                hudText = 'Your Move!'
+            else:
+                hudText = '{} To Move'.format(self.name)
+        elif self.state == PlayerState.GUESSING:
+            if self.id == currentPlayerID:
+                hudText = 'Make A Guess!'
+            else:
+                hudText = '{} is Guessing'.format(self.name)
+        elif self.state == PlayerState.RESPONDING_TO_GUESS:
+            if self.id == currentPlayerID:
+                hudText = 'Respond To The Guess!'
+            else:
+                hudText = '{} is Responding\n to a Guess'.format(self.name)
+
+        return hudText
 
     # Move the sprite based on user keypresses
-    def update(self,  validMoves):
-        pressed_keys = pygame.key.get_pressed()
-        if self.movesRemaining>0:
+    def MakeMove(self, validMoves):
+        pressedKeys = pygame.key.get_pressed()
+        if self.state == PlayerState.MOVING:
             playerMoved = False
-            if pressed_keys[K_UP] and validMoves['up']:
-                if not self.keyPressed:
-                    playerMoved = True
-                    self.loc[1] -= 50
-            elif pressed_keys[K_DOWN] and validMoves['down']:
-                if not self.keyPressed:
-                    playerMoved = True
-                    self.loc[1] += 50
-            elif pressed_keys[K_LEFT] and validMoves['left']:
-                if not self.keyPressed:
-                    playerMoved = True
-                    self.loc[0] -= 50
-            elif pressed_keys[K_RIGHT] and validMoves['right']:
-                if not self.keyPressed:
-                    playerMoved = True
-                    self.loc[0] += 50
-            else:
-                # This Is To Account For A Key Being Held Down
-                self.keyPressed = False
+            if pressedKeys[K_UP] and validMoves['up']:
+                playerMoved = True
+                self.loc[1] -= 1
+            elif pressedKeys[K_DOWN] and validMoves['down']:
+                playerMoved = True
+                self.loc[1] += 1
+            elif pressedKeys[K_LEFT] and validMoves['left']:
+                playerMoved = True
+                self.loc[0] -= 1
+            elif pressedKeys[K_RIGHT] and validMoves['right']:
+                playerMoved = True
+                self.loc[0] += 1
 
             if playerMoved:
-                self.keyPressed = True
-                self.movesRemaining -= 1
-            
-            if self.movesRemaining == 0:
-                # swap active turn value so the server sees it when passed
-                if self.id==1:
-                    self.activePlayer = 0
+                self.movedByGuess = False
+                if self.loc[0] % 2 == 0 and self.loc[1] % 2 == 0:
+                    self.state = PlayerState.GUESSING
                 else:
-                    self.activePlayer = 1
+                    self.state = PlayerState.TURN_OVER
 
     def __repr__(self):
         return f"Player {self.id} is at {self.loc}"
@@ -82,14 +119,14 @@ class Player(pygame.sprite.Sprite):
             self.guessingCards[newCardType] = None
         else:
             self.guessingCards[newCardType] = card
-            
+
     def AllCardTypesGuessed(self):
         allGuessed = True
         for cardType in self.guessingCards:
             if self.guessingCards[cardType] is None:
                 allGuessed = False
         return allGuessed
-    
+
     def ClearGuesses(self):
         self.guessing = False
         self.guessingCards = {Deck.ClueType.ROOM: None,

@@ -16,12 +16,12 @@ class Network:
         try:
             self.client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.client.connect(self.addr)
-            return pickle.loads(self.client.recv(2048))
+            return pickle.loads(self.client.recv(8192))
         except socket.error as e:
             print(e)
     def send(self, data):
         try:
             self.client.send(pickle.dumps(data))
-            return pickle.loads(self.client.recv(2048))
+            return pickle.loads(self.client.recv(8192))
         except socket.error as e:
             print(e)
