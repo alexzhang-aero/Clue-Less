@@ -28,8 +28,8 @@ class GameBoard:
 
         roomsizeX = self.size[0] / 4
         roomsizeY = self.size[1] / 4
-        roomClueList, _, _ = Deck.GetAllCards()
-        self.roomList = CreateRooms(roomClueList, (roomsizeX, roomsizeY))
+        roomClueList, weaponsList, _ = Deck.GetAllCards()
+        self.roomList = CreateRooms(roomClueList, (roomsizeX, roomsizeY), weaponsList)
 
     def BuildGameBoard(self, players, userID):
         userPlayer = players[userID]
@@ -51,6 +51,10 @@ class GameBoard:
             roomYLoc = (room.loc[1] * (self.size[1] / 6)) + (room.loc[1] * (self.size[1] / 48))
             self.screen.blit(room.surf,
                              room.surf.get_rect(topleft=(roomXLoc, roomYLoc)))
+            if room.weapon:
+                weapon_rect = room.weapon_surf.get_rect(topleft=(roomXLoc + (room.size[0] / 2) - (room.size[0] / 8),
+                                                                  roomYLoc + (room.size[1] / 2) - (room.size[1] / 8)))
+                self.screen.blit(room.weapon_surf, weapon_rect)
 
             playerInRoomCol = 0
             playerInRoomRow = 0
