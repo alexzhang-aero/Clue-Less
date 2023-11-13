@@ -260,14 +260,16 @@ class GameBoard:
                 validMoves[direction] = False
                 continue
             
+            # Ensure player moves Room -> Hallway or Hallway -> Room
             if newLoc[0] % 2 != 0 and newLoc[0] % 2 != 0:
                 validMoves[direction] = False
                 continue
 
             for player in allPlayers:
+                # if other player... and potential loc is a hallway... and other player is in potential loc
                 if player.id != playerId and\
-                   (playerLoc[0] % 2 != 0 or playerLoc[0] % 2 != 0) and\
-                   player.loc == playerLoc:
+                   (newLoc[0] % 2 != 0 or newLoc[1] % 2 != 0) and\
+                   player.loc == newLoc:
                     validMoves[direction] = False
                     continue
 
