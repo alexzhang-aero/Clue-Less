@@ -29,7 +29,8 @@ class Player(pygame.sprite.Sprite):
                  loc,
                  dealtCards,
                  id:int,
-                 name):
+                 name,
+                 isOwned=False):
         super(Player, self).__init__()
 
         self.dealtCards = dealtCards
@@ -39,6 +40,7 @@ class Player(pygame.sprite.Sprite):
         self.id = id
         
         self.name = name
+        self.isOwned = isOwned
 
         self.state = PlayerState.WAITING
         self.movedByGuess = False

@@ -10,11 +10,13 @@ from _thread import *
 import sys
 import pickle
 from Player import Player, PlayerState
-from Deck import DealCards, ClueType
+from Deck import DealCards, ClueType, Deck
 
 server = "127.0.0.1"
 port = 5555
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+player_count = 3
 
 try:
     s.bind((server, port))
@@ -25,7 +27,11 @@ except socket.error as e:
 s.listen(2)
 print("Waiting for a connection, Server Started")
 
-murderEnvelope, cardPiles = DealCards(6)
+murderEnvelope, cardPiles = DealCards(player_count)
+# Fill cardPiles with empty decks until it's length is 6
+while len(cardPiles) < 6:
+    # Dont deal to non-player decks
+    cardPiles.append(Deck())
 
 players = [Player([3, 0], cardPiles[0], id=0, name='Dwarf'),
            Player([0, 1], cardPiles[1], id=1, name='Knight'),
@@ -33,6 +39,7 @@ players = [Player([3, 0], cardPiles[0], id=0, name='Dwarf'),
            Player([0, 3], cardPiles[3], id=3, name='Vampire'),
            Player([1, 4], cardPiles[4], id=4, name='Witch'),
            Player([3, 4], cardPiles[5], id=5, name='Wizard')]
+
 
 print(murderEnvelope[ClueType.ROOM].name)
 print(murderEnvelope[ClueType.WEAPON].name)
@@ -43,6 +50,8 @@ def threaded_client(conn, playerId:int):
     if playerId == 0:
         players[playerId].state = PlayerState.MOVING
 
+    players[playerId].isOwned = True
+    
     conn.send(pickle.dumps(players[playerId]))
     while True:
         try:

@@ -235,9 +235,9 @@ class GameBoard:
         self.screen.blit(hudSurf, hudSurf.get_rect(topleft=(self.size[0]/2 - 250, 150)))
 
     def ClickScreen(self, mouseLoc, player):
-        print(mouseLoc)
+        # print(mouseLoc)
         for button in self.buttons:
-            print(button)
+            # print(button)
             if collide((mouseLoc[0], mouseLoc[1]), button[0], button[1], button[2], button[3]):
                 if button[5]:
                     player = button[4](player, button[5])
