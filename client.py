@@ -135,7 +135,4 @@ def main():
         if player is None:
             running = False
 
-
-
-
 main()
