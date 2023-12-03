@@ -22,7 +22,6 @@ class Room(pygame.sprite.Sprite):
                  size,
                  clue,
                  weapon=None):
-        
         super(Room, self).__init__()
         self.loc = loc
         self.size = size
@@ -31,12 +30,13 @@ class Room(pygame.sprite.Sprite):
         self.surf = pygame.image.load(os.path.join('img', self.clue.fileName)).convert()
         self.surf = pygame.transform.scale(self.surf, (size[0], size[1])) 
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
-
         self.weapon = weapon
+        
         if self.weapon:
             self.weapon_surf = pygame.image.load(os.path.join('img', self.weapon.fileName)).convert()
             self.weapon_surf = pygame.transform.scale(self.weapon_surf, (int(size[0]/4), int(size[1]/4)))
             self.weapon_surf.set_colorkey((0, 0, 0), RLEACCEL)
+            
 
 def CreateRooms(roomClueList, roomSize, weaponList:list):
     """ Create the Room objects for the game board and add weapons to some"""
@@ -47,7 +47,6 @@ def CreateRooms(roomClueList, roomSize, weaponList:list):
     weaponRooms = [0,1,2,6,7,8]
     i = 0
     for roomClue in roomClueList:
-        roomList.append(Room((col, row), roomSize, roomClue))
         weapon = None
         if weaponList and i in weaponRooms:
             # Remove a random weapon from the list and assign it to the current room
@@ -57,6 +56,5 @@ def CreateRooms(roomClueList, roomSize, weaponList:list):
         if col > 4:
             col = 0
             row += 2
-
         i += 1
     return roomList
