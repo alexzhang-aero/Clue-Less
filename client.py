@@ -10,7 +10,7 @@ from Player import Player, PlayerState
 from GameBoard import GameBoard
 
 SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = 1200
+SCREEN_HEIGHT = 1000
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))

@@ -33,12 +33,12 @@ while len(cardPiles) < 6:
     # Dont deal to non-player decks
     cardPiles.append(Deck())
 
-players = [Player([3, 0], cardPiles[0], id=0, name='Dwarf'),
-           Player([0, 1], cardPiles[1], id=1, name='Knight'),
-           Player([4, 1], cardPiles[2], id=2, name='Princess'),
-           Player([0, 3], cardPiles[3], id=3, name='Vampire'),
-           Player([1, 4], cardPiles[4], id=4, name='Witch'),
-           Player([3, 4], cardPiles[5], id=5, name='Wizard')]
+players = [Player([3, -0.5], cardPiles[0], id=0, name='Dwarf'),
+           Player([-0.5, 1], cardPiles[1], id=1, name='Knight'),
+           Player([4.5, 1], cardPiles[2], id=2, name='Princess'),
+           Player([-0.5, 3], cardPiles[3], id=3, name='Vampire'),
+           Player([1, 4.5], cardPiles[4], id=4, name='Witch'),
+           Player([3, 4.5], cardPiles[5], id=5, name='Wizard')]
 
 
 print(murderEnvelope[ClueType.ROOM].name)

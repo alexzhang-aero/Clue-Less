@@ -1,6 +1,7 @@
 import pygame
 import os
 import Deck
+import math
 from enum import Enum
 from pygame.locals import (
     K_UP,
@@ -92,7 +93,15 @@ class Player(pygame.sprite.Sprite):
         pressedKeys = pygame.key.get_pressed()
         if self.state == PlayerState.MOVING:
             playerMoved = False
-            if pressedKeys[K_UP] and validMoves['up']:
+
+            # Checks player is in starting position and moves to adjacent hall with any keypress
+            if any(pressedKeys) and (self.loc[0] % 1 != 0 or self.loc[1] % 1 != 0):
+                playerMoved = True
+                self.loc[0] = math.trunc(self.loc[0])
+                self.loc[1] = math.trunc(self.loc[1])
+
+            # Regular moves
+            elif pressedKeys[K_UP] and validMoves['up']:
                 playerMoved = True
                 self.loc[1] -= 1
             elif pressedKeys[K_DOWN] and validMoves['down']:
