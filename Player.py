@@ -24,6 +24,9 @@ class PlayerState(Enum):
     OUT = 10
     WINNER = 11
     LOSER = 12
+    LOOKING_AT_CARDS = 13
+    WAITING_IN_ROOM = 14
+    TURN_OVER_OUT = 15
 
 class Player(pygame.sprite.Sprite):
     def __init__(self,
@@ -59,11 +62,20 @@ class Player(pygame.sprite.Sprite):
         spriteSurf.set_colorkey((0, 0, 0))
         return spriteSurf
 
-    def CreateHudImg(self, size):
-        hudSurf = pygame.image.load(os.path.join('img', 'Players', '{}HUD.png'.format(self.name))).convert_alpha()
+    def CreateHudImg(self, size, gray):
+        grayText = ''
+        if gray:
+            grayText = 'GRAY'
+        hudSurf = pygame.image.load(os.path.join('img', 'Players', '{}HUD{}.png'.format(self.name, grayText))).convert_alpha()
         hudSurf = pygame.transform.scale(hudSurf, (size[0], size[1])) 
         hudSurf.set_colorkey((0, 0, 0))
         return hudSurf
+
+    def IsActive(self):
+        return self.state in [PlayerState.MOVING, 
+                              PlayerState.GUESSING,
+                              PlayerState.AWAITING_GUESS_RESPONSE,
+                              PlayerState.WAITING_IN_ROOM]
 
     def convert_alpha(self):
         self.spriteSurf = self.spriteSurf.convert_alpha()
@@ -117,7 +129,7 @@ class Player(pygame.sprite.Sprite):
             if playerMoved:
                 self.movedByGuess = False
                 if self.loc[0] % 2 == 0 and self.loc[1] % 2 == 0:
-                    self.state = PlayerState.GUESSING
+                    self.state = PlayerState.WAITING_IN_ROOM
                 else:
                     self.state = PlayerState.TURN_OVER
 

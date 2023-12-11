@@ -71,7 +71,7 @@ class GameBoard:
                         playerInRoomRow += 1
 
         for player in players:
-            if player.state != PlayerState.OUT and\
+            if player.state not in [PlayerState.OUT, PlayerState.TURN_OVER_OUT] and\
                player.loc[0] % 2 or player.loc[1] % 2:
                 spriteXLoc = (player.loc[0] * ((self.size[0] * 3) / 16)) + (self.size[0] / 8) - (self.size[0] / 20)
                 spriteYLoc = (player.loc[1] * ((self.size[1] * 3) / 16)) + (self.size[1] / 8) - (self.size[1] / 20)
@@ -79,17 +79,23 @@ class GameBoard:
                 self.screen.blit(sprite,
                                  sprite.get_rect(topleft=(spriteXLoc, spriteYLoc)))
 
-        hudText = ''
+        xPlayerLoc = 0
+        yPlayerLoc = 0
         for player in players:
-            if player.CreateHudText(userID):
-                hudText = player.CreateHudText(userID)
-                break
+            if player.state != PlayerState.OUT:
+                hudSurf = player.CreateHudImg((100,100), not player.IsActive())
+                self.screen.blit(hudSurf, hudSurf.get_rect(topleft=(xPlayerLoc * 100, self.size[1] + yPlayerLoc * 100)))
+            xPlayerLoc += 1
+            if xPlayerLoc == 3:
+                xPlayerLoc = 0
+                yPlayerLoc = 1
 
         font = pygame.font.Font('freesansbold.ttf', 32)
-        text = font.render(hudText, True, gold, None)
-        self.screen.blit(text, text.get_rect(topleft=(5, self.size[1] + 80)))
+        text = font.render('SEE CARDS', True, gold, None)
+        self.screen.blit(text, text.get_rect(topleft=(305, self.size[1] + 80)))
+        self.buttons.append((305, 500 , self.size[1], self.size[1] + 200, LookAtCards, None))
 
-        hudSurf = userPlayer.CreateHudImg((200,200))
+        hudSurf = userPlayer.CreateHudImg((200,200), userPlayer.state == PlayerState.OUT)
         self.screen.blit(hudSurf, hudSurf.get_rect(topleft=(self.size[0]/2, self.size[1])))
 
         font = pygame.font.Font('freesansbold.ttf', 32)
@@ -97,9 +103,13 @@ class GameBoard:
             text = font.render('YOU LOST', True, red, gray)
             self.screen.blit(text, text.get_rect(topleft=(self.size[0] - 285, self.size[1] + 80)))
         else:
+            if userPlayer.state == PlayerState.WAITING_IN_ROOM:
+                text = font.render('Make Guess', True, green, gray)
+                self.screen.blit(text, text.get_rect(topleft=(self.size[0] - 285, self.size[1] + 20)))
+                self.buttons.append((self.size[0] - 300, self.size[0] , self.size[1] + 20, self.size[1] + 120, MakeGuess, None))
             text = font.render('Make Accusation', True, red, gray)
-            self.screen.blit(text, text.get_rect(topleft=(self.size[0] - 285, self.size[1] + 80)))
-            self.buttons.append((self.size[0] - 300, self.size[0] , self.size[1], self.size[1] + 200, MakeAccusation, None))
+            self.screen.blit(text, text.get_rect(topleft=(self.size[0] - 285, self.size[1] + 100)))
+            self.buttons.append((self.size[0] - 300, self.size[0] , self.size[1] + 120, self.size[1] + 200, MakeAccusation, None))
 
         if userPlayer.state == PlayerState.GUESSING:
             currRoom = self.GetRoomFromLoc(userPlayer.loc)
@@ -168,6 +178,20 @@ class GameBoard:
             if userPlayer.AllCardTypesGuessed():
                 self.buttons.append((lastLoc[0], lastLoc[0] + 100 , lastLoc[1], lastLoc[1] + clueLoc[2], SubmitAccusation, None))
 
+        elif userPlayer.state == PlayerState.LOOKING_AT_CARDS:
+            clueScreenLocations = self.BuildGuessWindow(userPlayer.knownCards.GetAllCardsOfOneType(Deck.ClueType.ROOM),
+                                                        userPlayer.knownCards.GetAllCardsOfOneType(Deck.ClueType.WEAPON),
+                                                        userPlayer.knownCards.GetAllCardsOfOneType(Deck.ClueType.SUSPECT),
+                                                        None,
+                                                        None,
+                                                        0,
+                                                        'Close Window')
+            lastLoc = 0
+            for clue in clueScreenLocations:
+                clueLoc = clueScreenLocations[clue]
+                lastLoc = (clueLoc[0], clueLoc[1] + clueLoc[2])
+            self.buttons.append((lastLoc[0], lastLoc[0] + 100 , lastLoc[1], lastLoc[1] + clueLoc[2], DoneLookingAtCards, None))
+
         pygame.display.flip()
 
     def BuildGuessWindow(self,
@@ -184,10 +208,17 @@ class GameBoard:
         backgroundSurf.set_colorkey((0, 0, 0), RLEACCEL)
         backgroundSurf = backgroundSurf.convert_alpha()
         self.screen.blit(backgroundSurf, backgroundSurf.get_rect(topleft=(0, 0)))
+        
+        if not roomList:
+            roomList = []
+        if not weaponList:
+            weaponList = []
+        if not suspectList:
+            suspectList = []
 
         numOfClues = len(roomList) + len(weaponList) + len(suspectList) + 5
         
-        spacePerClue = min(int(800 / numOfClues), 100)
+        spacePerClue = min(int(800 / numOfClues), 70)
 
         clueTypeFont = pygame.font.Font('freesansbold.ttf', spacePerClue)
         clueNameFont = pygame.font.Font('freesansbold.ttf', spacePerClue - 5)
@@ -217,7 +248,7 @@ class GameBoard:
                 clueScreenLocations[clue] = (200, vertOffset, spacePerClue)
                 vertOffset += spacePerClue
 
-        if pickedCards.Count() == neededSelections:
+        if neededSelections == 0 or pickedCards.Count() == neededSelections:
             text = clueNameFont.render(guessTypeString, True, green, None)
             self.screen.blit(text, text.get_rect(topleft=(200, vertOffset)))
 
@@ -235,13 +266,13 @@ class GameBoard:
         text = font.render('Winner:', True, gold, None)
         self.screen.blit(text, text.get_rect(topleft=(self.size[0]/2 - 70, 80)))
     
-        hudSurf = winner.CreateHudImg((500,500))
+        hudSurf = winner.CreateHudImg((500,500), False)
         self.screen.blit(hudSurf, hudSurf.get_rect(topleft=(self.size[0]/2 - 250, 150)))
 
     def ClickScreen(self, mouseLoc, player):
-        # print(mouseLoc)
+        print(mouseLoc)
         for button in self.buttons:
-            # print(button)
+            print(button)
             if collide((mouseLoc[0], mouseLoc[1]), button[0], button[1], button[2], button[3]):
                 if button[5]:
                     player = button[4](player, button[5])
@@ -306,10 +337,22 @@ def MakeAccusation(player):
     player.state = PlayerState.ACCUSING
     return player
 
+def MakeGuess(player):
+    player.state = PlayerState.GUESSING
+    return player
+
 def SubmitAccusation(player):
     player.state = PlayerState.ACCUSED
     return player
 
 def SubmitGuessResponse(player):
     player.state = PlayerState.GUESS_RESPONSE_SENT
+    return player
+
+def LookAtCards(player):
+    player.state = PlayerState.LOOKING_AT_CARDS
+    return player
+
+def DoneLookingAtCards(player):
+    player.state = PlayerState.MOVING
     return player

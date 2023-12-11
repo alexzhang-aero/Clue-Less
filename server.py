@@ -67,7 +67,7 @@ def threaded_client(conn, playerId:int):
                             player.state = PlayerState.LOSER
                         playerReceived.state = PlayerState.WINNER
                     else:
-                        playerReceived.state = PlayerState.OUT
+                        playerReceived.state = PlayerState.TURN_OVER_OUT
 
                 players[playerReceived.id] = playerReceived
 

@@ -38,6 +38,13 @@ class Deck():
             if cardIn.name == card.name:
                 return True
         return False
+    
+    def GetAllCardsOfOneType(self, typeIn):
+        cardsOut = []
+        for card in self.cards:
+            if card.type == typeIn:
+                cardsOut.append(card)
+        return cardsOut
 
     def Count(self):
         return len(self.cards)

@@ -20,7 +20,6 @@ clock = pygame.time.Clock()
 
 def GamePlayLoop(player:Player, otherPlayers:list):
     """ Main game loop
-
     This function runs the main game loop for Clue-Less. It takes a Player object
     representing the current player and a dictionary of Player objects representing
     the other players in the game. It returns the updated Player object after the
@@ -34,7 +33,7 @@ def GamePlayLoop(player:Player, otherPlayers:list):
     :return: The updated Player object
     :rtype: Player
     """
-
+    print(player.state)
     # Build the game board and handle quit events
     gameboard = GameBoard(screen, (SCREEN_WIDTH, SCREEN_HEIGHT))
     gameboard.BuildGameBoard(otherPlayers, player.id)
@@ -43,10 +42,22 @@ def GamePlayLoop(player:Player, otherPlayers:list):
             pygame.quit()
             return None
 
+    # Handle waiting state
+    if player.state in [PlayerState.TURN_OVER, PlayerState.TURN_OVER_OUT]:
+        for otherPlayer in otherPlayers:
+            if otherPlayer.IsActive():
+                if player.state == PlayerState.TURN_OVER_OUT:
+                    player.state = PlayerState.OUT
+                else:
+                    player.state = PlayerState.WAITING
+                break
+
     # Loop for guessing, responding to guesses, and accusing
     while(player.state in [PlayerState.GUESSING,
                            PlayerState.RESPONDING_TO_GUESS,
-                           PlayerState.ACCUSING]):
+                           PlayerState.ACCUSING,
+                           PlayerState.LOOKING_AT_CARDS,
+                           PlayerState.WAITING_IN_ROOM]):
         # Build the game board and handle quit events
         gameboard.BuildGameBoard(otherPlayers, player.id)
         for event in pygame.event.get():
@@ -66,6 +77,13 @@ def GamePlayLoop(player:Player, otherPlayers:list):
 
         # Build the game board
         gameboard.BuildGameBoard(otherPlayers, player.id)
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                return None
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse = pygame.mouse.get_pos()
+                player = gameboard.ClickScreen(mouse, player)
         
     # Handle waiting state
     if player.state == PlayerState.WAITING:
@@ -124,15 +142,8 @@ def GamePlayLoop(player:Player, otherPlayers:list):
     playerBefore = otherPlayers[playerIdBefore]
     
     if player.state == PlayerState.WAITING and\
-       playerBefore.state == PlayerState.TURN_OVER:
+       playerBefore.state in [PlayerState.TURN_OVER, PlayerState.TURN_OVER_OUT]:
            player.state = PlayerState.MOVING
-
-    # Handle waiting state again
-    if player.state == PlayerState.TURN_OVER:
-        for otherPlayer in otherPlayers:
-            if otherPlayer.state in [PlayerState.MOVING, PlayerState.GUESSING, PlayerState.AWAITING_GUESS_RESPONSE]:
-                player.state == PlayerState.WAITING
-                break
 
     return player
 
@@ -166,7 +177,7 @@ def main():
     while running:
         # when we send our players data we get back the other player's data and the current active player
         allPlayers = n.send(player) 
-        player = GamePlayLoop(player, allPlayers)
+        player = GamePlayLoop(allPlayers[player.id], allPlayers)
 
         if player is None:
             running = False
