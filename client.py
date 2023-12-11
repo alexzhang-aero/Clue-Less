@@ -18,7 +18,7 @@ pygame.display.set_caption('Clue-less - Client')
 clock = pygame.time.Clock()
 
 
-def GamePlayLoop(player:Player, otherPlayers:list):
+def GamePlayLoop(player: Player, otherPlayers: list):
     """ Main game loop
 
     This function runs the main game loop for Clue-Less. It takes a Player object
@@ -44,9 +44,9 @@ def GamePlayLoop(player:Player, otherPlayers:list):
             return None
 
     # Loop for guessing, responding to guesses, and accusing
-    while(player.state in [PlayerState.GUESSING,
-                           PlayerState.RESPONDING_TO_GUESS,
-                           PlayerState.ACCUSING]):
+    while (player.state in [PlayerState.GUESSING,
+                            PlayerState.RESPONDING_TO_GUESS,
+                            PlayerState.ACCUSING]):
         # Build the game board and handle quit events
         gameboard.BuildGameBoard(otherPlayers, player.id)
         for event in pygame.event.get():
@@ -66,7 +66,7 @@ def GamePlayLoop(player:Player, otherPlayers:list):
 
         # Build the game board
         gameboard.BuildGameBoard(otherPlayers, player.id)
-        
+
     # Handle waiting state
     if player.state == PlayerState.WAITING:
         print("Waiting for other players to make their moves...")
@@ -81,14 +81,14 @@ def GamePlayLoop(player:Player, otherPlayers:list):
         # Check if previous player is still waiting for guess response
         playerIdBefore = GetIdBefore(player.id, otherPlayers)
         playerBefore = otherPlayers[playerIdBefore]
-        while(playerBefore.state == PlayerState.NO_GUESS_RESPONSE and\
-              playerIdBefore != player.id):
+        while (playerBefore.state == PlayerState.NO_GUESS_RESPONSE and \
+               playerIdBefore != player.id):
             playerIdBefore = GetIdBefore(playerIdBefore, otherPlayers)
             playerBefore = otherPlayers[playerIdBefore]
 
         # Check if player can respond to guess
-        if player.state == PlayerState.WAITING and\
-           playerBefore.state == PlayerState.AWAITING_GUESS_RESPONSE:
+        if player.state == PlayerState.WAITING and \
+                playerBefore.state == PlayerState.AWAITING_GUESS_RESPONSE:
             canRespToGuess = False
             for cardType in playerBefore.guessingCards:
                 guessedCard = playerBefore.guessingCards[cardType]
@@ -108,7 +108,7 @@ def GamePlayLoop(player:Player, otherPlayers:list):
                 player.knownCards.AddCard(otherPlayer.guessResponse.cards[0])
                 player.state = PlayerState.TURN_OVER
                 break
-    
+
     # Handle guess response received state
     if player.state in [PlayerState.GUESS_RESPONSE_SENT, PlayerState.NO_GUESS_RESPONSE]:
         guessResponseReceived = True
@@ -122,10 +122,10 @@ def GamePlayLoop(player:Player, otherPlayers:list):
     # Handle turn over state
     playerIdBefore = GetIdBefore(player.id, otherPlayers)
     playerBefore = otherPlayers[playerIdBefore]
-    
-    if player.state == PlayerState.WAITING and\
-       playerBefore.state == PlayerState.TURN_OVER:
-           player.state = PlayerState.MOVING
+
+    if player.state == PlayerState.WAITING and \
+            playerBefore.state == PlayerState.TURN_OVER:
+        player.state = PlayerState.MOVING
 
     # Handle waiting state again
     if player.state == PlayerState.TURN_OVER:
@@ -136,21 +136,23 @@ def GamePlayLoop(player:Player, otherPlayers:list):
 
     return player
 
-def GetIdBefore(id, otherPlayers:list):
+
+def GetIdBefore(id, otherPlayers: list):
     # Count how many players are owned by clients Player.isOwned == True
     ownedPlayerCount = 0
     for i in range(len(otherPlayers)):
         if otherPlayers[i].isOwned:
             ownedPlayerCount += 1
-    if ownedPlayerCount <3:
+    if ownedPlayerCount < 3:
         ownedPlayerCount = 3
 
     if id == 0:
         print('Player ID is {}. Returning {}'.format(id, ownedPlayerCount - 1))
         return ownedPlayerCount - 1
-    
+
     print('Player ID is {}. Returning {}'.format(id, id - 1))
     return id - 1
+
 
 def main():
     n = Network()
@@ -165,10 +167,11 @@ def main():
     player.dealtCards.Print()
     while running:
         # when we send our players data we get back the other player's data and the current active player
-        allPlayers = n.send(player) 
+        allPlayers = n.send(player)
         player = GamePlayLoop(player, allPlayers)
 
         if player is None:
             running = False
+
 
 main()
